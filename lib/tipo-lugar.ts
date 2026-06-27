@@ -54,6 +54,19 @@ export function colorTipoLugar(tipo: TipoLugar): string {
   return TIPO_LUGAR_OPCIONES.find((o) => o.value === tipo)?.color ?? "#2563eb";
 }
 
+export function tieneNecesidadAltaActiva(centro: CentroAcopio): boolean {
+  return (centro.necesidades ?? []).some(
+    (n) => n.urgencia === "alta" && n.estado !== "agotado",
+  );
+}
+
+/** Acopio con necesidad alta se muestra como urgencia (pin rojo). */
+export function tipoLugarEfectivo(centro: CentroAcopio): TipoLugar {
+  const tipo = centro.tipo_lugar ?? "acopio";
+  if (tipo === "acopio" && tieneNecesidadAltaActiva(centro)) return "urgencia";
+  return tipo;
+}
+
 export function mensajeChatNuevoLugar(
   tipo: TipoLugar,
   nombre: string,
@@ -93,8 +106,7 @@ export function cumpleFiltroTipoLugar(
   centro: CentroAcopio,
   filtro: FiltroTipoLugar,
 ): boolean {
-  const tipo = centro.tipo_lugar ?? "acopio";
-  return filtro[tipo];
+  return filtro[tipoLugarEfectivo(centro)];
 }
 
 export function parseDonacionLimite(value: unknown): string | null {

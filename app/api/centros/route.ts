@@ -4,6 +4,7 @@ import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
 import { publicarEnChat } from "@/lib/chat-actividad";
+import { sincronizarUrgenciaPorNecesidades } from "@/lib/centro-urgencia-auto";
 import {
   CENTRO_SELECT,
   mapCentro,
@@ -29,6 +30,7 @@ export async function GET() {
 
   try {
     await ensureSchema();
+    await sincronizarUrgenciaPorNecesidades();
 
     const [centrosRows] = await pool.query<CentroRow[]>(
       `SELECT ${CENTRO_SELECT}

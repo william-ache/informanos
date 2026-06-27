@@ -10,6 +10,7 @@ import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
 import {
   colorTipoLugar,
   etiquetaTipoLugar,
+  tipoLugarEfectivo,
 } from "@/lib/tipo-lugar";
 import type { CentroAcopio } from "@/types/database";
 import CentroVotoTipo from "@/components/CentroVotoTipo";
@@ -67,7 +68,7 @@ function CentroMarkerItem({
     <Marker
       ref={markerRef}
       position={[centro.latitud, centro.longitud]}
-      icon={iconoCentro(centro.tipo_lugar ?? "acopio")}
+      icon={iconoCentro(tipoLugarEfectivo(centro))}
       eventHandlers={{
         click: () => markerRef.current?.openPopup(),
       }}
@@ -93,10 +94,10 @@ function CentroMarkerItem({
             <span
               className="mb-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
               style={{
-                backgroundColor: colorTipoLugar(centro.tipo_lugar ?? "acopio"),
+                backgroundColor: colorTipoLugar(tipoLugarEfectivo(centro)),
               }}
             >
-              {etiquetaTipoLugar(centro.tipo_lugar ?? "acopio").split(" ")[0]}
+              {etiquetaTipoLugar(tipoLugarEfectivo(centro)).split(" ")[0]}
             </span>
             <p className="line-clamp-2 text-[13px] font-bold leading-snug">
               {centro.nombre}

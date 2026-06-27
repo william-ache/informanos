@@ -3,6 +3,21 @@ import { obtenerNombreCentro, publicarEnChat } from "@/lib/chat-actividad";
 import type { UrgenciaNivel } from "@/types/database";
 
 /** Si hay necesidad alta, el lugar pasa a tipo urgencia */
+export async function sincronizarUrgenciaPorNecesidades(): Promise<number> {
+  const [result] = await pool.execute(
+    `UPDATE centros_acopio c
+     SET c.tipo_lugar = 'urgencia'
+     WHERE c.tipo_lugar = 'acopio'
+       AND EXISTS (
+         SELECT 1 FROM necesidades n
+         WHERE n.centro_id = c.id
+           AND n.urgencia = 'alta'
+           AND n.estado != 'agotado'
+       )`,
+  );
+  return (result as { affectedRows?: number }).affectedRows ?? 0;
+}
+
 export async function aplicarUrgenciaCentroPorNecesidad(
   centroId: string,
   urgencia: UrgenciaNivel,
