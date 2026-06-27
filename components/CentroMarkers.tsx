@@ -56,73 +56,83 @@ function CentroMarkerItem({
       }}
       opacity={activo ? 1 : 0.45}
     >
-      <Popup>
-        <div className="min-w-[220px] max-w-[280px] text-slate-900">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="font-bold leading-tight">{centro.nombre}</p>
-              <p className="mt-0.5 text-sm text-slate-600">{centro.municipio}</p>
+      <Popup
+        maxWidth={300}
+        autoPan
+        autoPanPadding={[16, 16]}
+        keepInView
+        className="centro-popup"
+      >
+        <div className="centro-popup-inner flex w-[min(280px,calc(100vw-2.5rem))] flex-col text-slate-900">
+          <div className="shrink-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-bold leading-tight">{centro.nombre}</p>
+                <p className="mt-0.5 text-sm text-slate-600">{centro.municipio}</p>
+              </div>
+              {onReportarLugar && (
+                <button
+                  type="button"
+                  onClick={() => onReportarLugar(centro)}
+                  className="shrink-0 rounded-md border border-amber-400 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800"
+                >
+                  Reportar
+                </button>
+              )}
             </div>
-            {onReportarLugar && (
-              <button
-                type="button"
-                onClick={() => onReportarLugar(centro)}
-                className="shrink-0 rounded-md border border-amber-400 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800"
-              >
-                Reportar
-              </button>
+
+            {tienePoblacion(centro) && (
+              <p className="mt-1 text-xs leading-snug text-slate-500">
+                👥 {resumenPoblacion(centro)}
+              </p>
+            )}
+
+            {centro.contacto && (
+              <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
+                {centro.contacto.split(",").map((tel) => {
+                  const limpio = tel.trim();
+                  if (!limpio) return null;
+                  return (
+                    <a
+                      key={limpio}
+                      href={`tel:${limpio.replace(/\s/g, "")}`}
+                      className="text-blue-600 underline"
+                    >
+                      {limpio}
+                    </a>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {tienePoblacion(centro) && (
-            <p className="mt-1 text-xs text-slate-500">
-              👥 {resumenPoblacion(centro)}
-            </p>
-          )}
+          <div className="centro-popup-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {centro.necesidades && centro.necesidades.length > 0 ? (
+              <ul className="mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs">
+                {centro.necesidades.map((nec) => (
+                  <li key={nec.id}>
+                    <span className={urgenciaClass(nec.urgencia)}>
+                      {nec.urgencia.toUpperCase()}
+                    </span>
+                    {nec.estado === "agotado" && (
+                      <span className="ml-1 text-slate-500">· AGOTADO</span>
+                    )}
+                    {" · "}
+                    {nec.elemento} ({nec.cantidad_solicitada})
+                    <span className="mt-0.5 block text-slate-500">
+                      {formatFechaHumana(nec.actualizado_en)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 border-t border-slate-200 pt-2 text-sm text-slate-500">
+                Sin necesidades registradas.
+              </p>
+            )}
+          </div>
 
-          {centro.contacto && (
-            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
-              {centro.contacto.split(",").map((tel) => {
-                const limpio = tel.trim();
-                if (!limpio) return null;
-                return (
-                  <a
-                    key={limpio}
-                    href={`tel:${limpio.replace(/\s/g, "")}`}
-                    className="text-blue-600 underline"
-                  >
-                    {limpio}
-                  </a>
-                );
-              })}
-            </div>
-          )}
-
-          {centro.necesidades && centro.necesidades.length > 0 ? (
-            <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto border-t border-slate-200 pt-2 text-xs">
-              {centro.necesidades.map((nec) => (
-                <li key={nec.id}>
-                  <span className={urgenciaClass(nec.urgencia)}>
-                    {nec.urgencia.toUpperCase()}
-                  </span>
-                  {nec.estado === "agotado" && (
-                    <span className="ml-1 text-slate-500">· AGOTADO</span>
-                  )}
-                  {" · "}
-                  {nec.elemento} ({nec.cantidad_solicitada})
-                  <span className="mt-0.5 block text-slate-500">
-                    {formatFechaHumana(nec.actualizado_en)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-slate-500">
-              Sin necesidades registradas.
-            </p>
-          )}
-
-          <div className="mt-3 space-y-2">
+          <div className="mt-2 shrink-0 space-y-2 border-t border-slate-200 pt-2">
             <button
               type="button"
               onClick={() => abrirEnGoogleMaps(centro.latitud, centro.longitud)}
