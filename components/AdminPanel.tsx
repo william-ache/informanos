@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ModalPortal from "@/components/ModalPortal";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import {
   adminFetch,
   guardarAdminToken,
@@ -70,6 +71,31 @@ export default function AdminPanel({
   });
 
   const [formChat, setFormChat] = useState("");
+  const visualViewport = useVisualViewport();
+  const [esMovil, setEsMovil] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const update = () => setEsMovil(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onFocusIn = (event: FocusEvent) => {
+      const el = event.target;
+      if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+      window.setTimeout(() => {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      }, 350);
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    return () => document.removeEventListener("focusin", onFocusIn);
+  }, [open]);
 
   const verificarSesion = useCallback(async () => {
     const token = obtenerAdminToken();
@@ -365,15 +391,26 @@ export default function AdminPanel({
 
   if (!open) return null;
 
+  const overlayMovil =
+    esMovil && visualViewport
+      ? {
+          top: visualViewport.top,
+          left: visualViewport.left,
+          width: visualViewport.width,
+          height: visualViewport.height,
+        }
+      : undefined;
+
   return (
     <ModalPortal open>
       <div
-        className="fixed inset-0 z-[10000] flex items-end bg-black/70 lg:items-center lg:justify-center lg:p-4"
+        className="fixed z-[10000] flex items-end bg-black/70 lg:inset-0 lg:items-center lg:justify-center lg:p-4"
+        style={overlayMovil}
         onClick={cerrarPanel}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-slate-900 shadow-2xl lg:max-h-[85vh] lg:max-w-2xl lg:rounded-2xl"
+          className="flex h-full max-h-full w-full flex-col overflow-hidden rounded-t-2xl bg-slate-900 shadow-2xl lg:h-auto lg:max-h-[85vh] lg:max-w-2xl lg:rounded-2xl"
         >
           <header className="flex shrink-0 items-center justify-between border-b border-slate-800 px-4 py-3">
             <div>
@@ -405,7 +442,7 @@ export default function AdminPanel({
           {verificando ? (
             <p className="p-6 text-sm text-slate-400">Verificando…</p>
           ) : !autenticado ? (
-            <form onSubmit={iniciarSesion} className="space-y-4 p-5">
+            <form onSubmit={iniciarSesion} className="space-y-4 overflow-y-auto p-5 pb-safe">
               <p className="text-sm text-slate-400">
                 Clave de administrador (solo tú la conoces).
               </p>
@@ -449,7 +486,7 @@ export default function AdminPanel({
                 ))}
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-safe">
                 {error && (
                   <p className="mb-3 rounded-lg border border-red-800 bg-red-950/40 p-3 text-sm text-red-300">
                     {error}
