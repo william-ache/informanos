@@ -7,6 +7,7 @@ import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
 import { swrDefaults } from "@/lib/swr-config";
 import { formatFechaHumana } from "@/lib/formatFecha";
+import { mensajeInformaConUbicacion } from "@/lib/chat-sistema";
 import type { ChatMensaje } from "@/types/database";
 
 const CHAT_KEY = "/api/chat";
@@ -21,9 +22,13 @@ interface FloatMsg extends ChatMensaje {
 
 interface LiveChatOverlayProps {
   showNavOffset?: boolean;
+  onIrACentro?: (centroId: string) => void;
 }
 
-export default function LiveChatOverlay({ showNavOffset = true }: LiveChatOverlayProps) {
+export default function LiveChatOverlay({
+  showNavOffset = true,
+  onIrACentro,
+}: LiveChatOverlayProps) {
   const [floats, setFloats] = useState<FloatMsg[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
   const readyRef = useRef(false);
@@ -70,22 +75,35 @@ export default function LiveChatOverlay({ showNavOffset = true }: LiveChatOverla
     <div
       className={`pointer-events-none absolute right-3 ${bottomClass} z-[950] flex w-[min(100%,20rem)] flex-col items-end gap-2`}
     >
-      {floats.map((msg) => (
-        <article
-          key={msg.id}
-          className={`pointer-events-auto w-full rounded-xl border border-amber-500/40 bg-slate-950/95 px-3 py-2.5 shadow-xl backdrop-blur-sm ${
-            msg.fadeOut ? "chat-float-exit" : "chat-float-enter"
-          }`}
-        >
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-xs font-bold text-amber-400">{msg.autor}</span>
-            <time className="text-[10px] text-slate-500">
-              {formatFechaHumana(msg.creado_en)}
-            </time>
-          </div>
-          <p className="mt-1 text-sm leading-snug text-slate-100">{msg.mensaje}</p>
-        </article>
-      ))}
+      {floats.map((msg) => {
+        const conUbicacion = mensajeInformaConUbicacion(msg) && !!onIrACentro;
+
+        return (
+          <article
+            key={msg.id}
+            role={conUbicacion ? "button" : undefined}
+            tabIndex={conUbicacion ? 0 : undefined}
+            onClick={
+              conUbicacion
+                ? () => onIrACentro!(msg.centro_id!)
+                : undefined
+            }
+            className={`pointer-events-auto w-full rounded-xl border bg-slate-950/95 px-3 py-2.5 shadow-xl backdrop-blur-sm ${
+              conUbicacion
+                ? "cursor-pointer border-amber-500/60 hover:bg-amber-950/40"
+                : "border-amber-500/40"
+            } ${msg.fadeOut ? "chat-float-exit" : "chat-float-enter"}`}
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs font-bold text-amber-400">{msg.autor}</span>
+              <time className="text-[10px] text-slate-500">
+                {formatFechaHumana(msg.creado_en)}
+              </time>
+            </div>
+            <p className="mt-1 text-sm leading-snug text-slate-100">{msg.mensaje}</p>
+          </article>
+        );
+      })}
     </div>
   );
 }

@@ -50,7 +50,8 @@ interface MapProps {
   centroActivoId?: string | null;
   onReportarCentro?: (centro: CentroAcopio) => void;
   onVerCentroLista?: (centro: CentroAcopio) => void;
-  onRegistrarCentro?: (centro: NuevoCentroAcopio) => void | Promise<void>;
+  onRegistrarCentro?: (centro: NuevoCentroAcopio) => Promise<CentroAcopio>;
+  onLugarCreado?: (centro: CentroAcopio) => void;
   className?: string;
   active?: boolean;
   hideAgregarButton?: boolean;
@@ -111,6 +112,7 @@ function MapView({
   onReportarCentro,
   onVerCentroLista,
   onRegistrarCentro,
+  onLugarCreado,
   className = "",
   active = true,
   hideAgregarButton = false,
@@ -217,7 +219,7 @@ function MapView({
 
     setEnviando(true);
     try {
-      await onRegistrarCentro({
+      const creado = await onRegistrarCentro({
         nombre: form.nombre,
         municipio: form.municipio,
         direccion: form.direccion || null,
@@ -231,6 +233,7 @@ function MapView({
       });
       cerrarModal();
       setSeleccionMapa(false);
+      onLugarCreado?.(creado);
     } finally {
       setEnviando(false);
     }

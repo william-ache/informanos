@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 
-const AUTOR_SISTEMA = "Informa Aragua";
+import { AUTOR_SISTEMA } from "@/lib/chat-sistema";
 
 export async function publicarEnChat(
   mensaje: string,

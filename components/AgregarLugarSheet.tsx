@@ -29,6 +29,7 @@ export default function AgregarLugarSheet({
   const [error, setError] = useState<string | null>(null);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
   const [obteniendoGps, setObteniendoGps] = useState(false);
+  const [resolviendoEnlace, setResolviendoEnlace] = useState(false);
 
   function resetear() {
     setPaso("menu");
@@ -37,6 +38,7 @@ export default function AgregarLugarSheet({
     setEnlaceGoogle("");
     setError(null);
     setMostrarTutorial(false);
+    setResolviendoEnlace(false);
   }
 
   function cerrar() {
@@ -80,15 +82,48 @@ export default function AgregarLugarSheet({
     confirmarCoords(coords.lat, coords.lng);
   }
 
-  function confirmarGoogle() {
-    const coords = parseGoogleMapsUrl(enlaceGoogle);
-    if (!coords) {
-      setError(
-        "No detectamos coordenadas en ese enlace. Revisa el tutorial o escribe lat/lng manualmente.",
-      );
+  async function confirmarGoogle() {
+    const texto = enlaceGoogle.trim();
+    if (!texto) {
+      setError("Pega el enlace que copiaste de Google Maps.");
       return;
     }
-    confirmarCoords(coords.lat, coords.lng);
+
+    const local = parseGoogleMapsUrl(texto);
+    if (local) {
+      confirmarCoords(local.lat, local.lng);
+      return;
+    }
+
+    setResolviendoEnlace(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/google-maps/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: texto }),
+      });
+      const body = (await res.json()) as {
+        lat?: number;
+        lng?: number;
+        error?: string;
+      };
+
+      if (!res.ok || body.lat == null || body.lng == null) {
+        setError(
+          body.error ??
+            "No detectamos coordenadas en ese enlace. Revisa el tutorial o escribe lat/lng manualmente.",
+        );
+        return;
+      }
+
+      confirmarCoords(body.lat, body.lng);
+    } catch {
+      setError("No pudimos resolver el enlace. Revisa tu conexión e intenta de nuevo.");
+    } finally {
+      setResolviendoEnlace(false);
+    }
   }
 
   if (!open) return null;
@@ -243,10 +278,15 @@ export default function AgregarLugarSheet({
                   setEnlaceGoogle(e.target.value);
                   setError(null);
                 }}
-                className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
+                disabled={resolviendoEnlace}
+                className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-blue-500 disabled:opacity-60"
               />
 
-              {enlaceGoogle.trim() && parseGoogleMapsUrl(enlaceGoogle) && (
+              {resolviendoEnlace && (
+                <p className="mt-2 text-sm text-emerald-400">Resolviendo enlace de Google Maps…</p>
+              )}
+
+              {enlaceGoogle.trim() && parseGoogleMapsUrl(enlaceGoogle) && !resolviendoEnlace && (
                 <p className="mt-2 text-xs text-emerald-400">
                   ✓ Coordenadas detectadas:{" "}
                   {parseGoogleMapsUrl(enlaceGoogle)!.lat.toFixed(5)},{" "}
@@ -274,20 +314,20 @@ export default function AgregarLugarSheet({
                   <li>2. Busca el lugar o mantén presionado en el mapa.</li>
                   <li>3. Toca <strong>Compartir</strong> o el icono de compartir.</li>
                   <li>4. Elige <strong>Copiar enlace</strong>.</li>
-                  <li>5. Pégalo aquí arriba y pulsa Continuar.</li>
+                  <li>5. Pégalo aquí arriba y pulsa Continuar (el enlace corto también funciona).</li>
                   <li className="text-xs text-amber-200/70">
-                    Tip: si el enlace corto no funciona, abre el enlace en el navegador,
-                    copia la URL larga de la barra de direcciones e inténtalo de nuevo.
+                    Tip: si falla, abre el enlace en el navegador y copia la URL larga de la barra.
                   </li>
                 </ol>
               )}
 
               <button
                 type="button"
-                onClick={confirmarGoogle}
-                className="mt-4 w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white"
+                onClick={() => void confirmarGoogle()}
+                disabled={resolviendoEnlace}
+                className="mt-4 w-full rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white disabled:opacity-60"
               >
-                Continuar
+                {resolviendoEnlace ? "Resolviendo…" : "Continuar"}
               </button>
             </>
           )}

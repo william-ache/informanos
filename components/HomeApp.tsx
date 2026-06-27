@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatFechaHumana } from "@/lib/formatFecha";
@@ -64,6 +64,10 @@ const ReportarErrorModal = dynamic(
   { ssr: false },
 );
 
+const AdminPanel = dynamic(() => import("@/components/AdminPanel"), {
+  ssr: false,
+});
+
 const CENTROS_KEY = "/api/centros";
 
 type Tab = "mapa" | "centros" | "chat" | "reportar" | "errores";
@@ -107,9 +111,12 @@ export default function HomeApp() {
   const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
   const [agregarMenuOpen, setAgregarMenuOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const secretTapRef = useRef({ count: 0, timer: null as ReturnType<typeof setTimeout> | null });
   const [filtroPoblacion, setFiltroPoblacion] = useState<FiltroPoblacionState>(
     filtroPoblacionVacio,
   );
+  const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
   const pageVisible = usePageVisible();
   const inputActivo = useInputActivo();
   const { pendiente: privacidadPendiente } = usePrivacidad();
@@ -165,6 +172,16 @@ export default function HomeApp() {
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
     setNecesidadForm((prev) => ({ ...prev, centro_id: centro.id }));
+    setHintNuevoLugar(null);
+    setDesktopPanel("reportar");
+    setTab("reportar");
+  }, []);
+
+  const irAReportarTrasCrear = useCallback((centro: CentroAcopio) => {
+    setAgregarMenuOpen(false);
+    setCentroActivoId(null);
+    setNecesidadForm({ ...emptyNecesidad, centro_id: centro.id });
+    setHintNuevoLugar(centro.nombre);
     setDesktopPanel("reportar");
     setTab("reportar");
   }, []);
@@ -175,6 +192,32 @@ export default function HomeApp() {
     setTab("centros");
   }, []);
 
+  const irACentroEnMapa = useCallback(
+    (centroId: string) => {
+      setCentroActivoId(centroId);
+      if (!isDesktop) setTab("mapa");
+    },
+    [isDesktop],
+  );
+
+  function onSecretAdminTap() {
+    secretTapRef.current.count += 1;
+    if (secretTapRef.current.timer) clearTimeout(secretTapRef.current.timer);
+    if (secretTapRef.current.count >= 5) {
+      secretTapRef.current.count = 0;
+      setAdminOpen(true);
+      return;
+    }
+    secretTapRef.current.timer = setTimeout(() => {
+      secretTapRef.current.count = 0;
+    }, 2500);
+  }
+
+  const refrescarDatosAdmin = useCallback(async () => {
+    await mutate(CENTROS_KEY);
+    await mutate("/api/chat");
+  }, []);
+
   const urgentes = useMemo(
     () =>
       centros.filter((c) =>
@@ -183,7 +226,7 @@ export default function HomeApp() {
     [centros],
   );
 
-  const onRegistrarCentro = useCallback(async (centro: NuevoCentroAcopio) => {
+  const onRegistrarCentro = useCallback(async (centro: NuevoCentroAcopio): Promise<CentroAcopio> => {
     setAccionError(null);
 
     const res = await fetch(CENTROS_KEY, {
@@ -192,14 +235,28 @@ export default function HomeApp() {
       body: JSON.stringify(centro),
     });
 
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    const body = (await res.json().catch(() => null)) as {
+      centro?: CentroAcopio;
+      error?: string;
+    } | null;
+
+    if (!res.ok || !body?.centro) {
       const msg = body?.error ?? "No se pudo registrar el centro.";
       setAccionError(msg);
       throw new Error(msg);
     }
 
-    await mutate(CENTROS_KEY);
+    await mutate(
+      CENTROS_KEY,
+      (actual) => {
+        const previos = actual?.centros ?? [];
+        if (previos.some((c: CentroAcopio) => c.id === body.centro!.id)) return actual;
+        return { centros: [...previos, body.centro!] };
+      },
+      { revalidate: true },
+    );
+
+    return body.centro;
   }, []);
 
   async function agregarNecesidad(event: React.FormEvent) {
@@ -234,6 +291,7 @@ export default function HomeApp() {
       }
 
       setNecesidadForm(emptyNecesidad);
+      setHintNuevoLugar(null);
       await mutate(CENTROS_KEY);
       if (isDesktop) setDesktopPanel("centros");
       else setTab("centros");
@@ -258,7 +316,11 @@ export default function HomeApp() {
           <header className="shrink-0 border-b border-slate-800 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest text-red-400">
+                <p
+                  role="presentation"
+                  onClick={onSecretAdminTap}
+                  className="cursor-default text-xs font-semibold uppercase tracking-widest text-red-400 select-none"
+                >
                   Emergencia · Estado Aragua
                 </p>
                 <h1 className="mt-1 text-xl font-bold">Centros de Acopio</h1>
@@ -326,11 +388,16 @@ export default function HomeApp() {
                 onFormChange={setNecesidadForm}
                 onSubmit={agregarNecesidad}
                 guardando={guardandoNecesidad}
+                mensajeInicial={
+                  hintNuevoLugar
+                    ? `Lugar «${hintNuevoLugar}» creado. Indica qué necesita.`
+                    : undefined
+                }
               />
             )}
 
             {desktopPanel === "chat" && (
-              <StreamingChat fullHeight hideHeader />
+              <StreamingChat fullHeight hideHeader onIrACentro={irACentroEnMapa} />
             )}
           </div>
         </aside>
@@ -339,7 +406,11 @@ export default function HomeApp() {
       {!isDesktop && (
         <header className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-3 pt-safe">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-red-400">
+            <p
+              role="presentation"
+              onClick={onSecretAdminTap}
+              className="cursor-default text-[10px] font-bold uppercase tracking-widest text-red-400 select-none"
+            >
               Emergencia · Aragua
             </p>
             <h1 className="text-base font-bold leading-tight">
@@ -390,12 +461,15 @@ export default function HomeApp() {
             onReportarCentro={abrirReporteCentro}
             onVerCentroLista={verCentroEnLista}
             onRegistrarCentro={onRegistrarCentro}
+            onLugarCreado={irAReportarTrasCrear}
             hideAgregarButton={!isDesktop}
             agregarMenuOpen={agregarMenuOpen}
             onAgregarMenuChange={setAgregarMenuOpen}
             className="h-full"
           />
-          {mapActive && <LiveChatOverlay showNavOffset={!isDesktop} />}
+          {mapActive && (
+            <LiveChatOverlay showNavOffset={!isDesktop} onIrACentro={irACentroEnMapa} />
+          )}
         </div>
 
         {!isDesktop && tab === "centros" && (
@@ -418,7 +492,7 @@ export default function HomeApp() {
 
         {showMobileChat && (
           <div className="absolute inset-0 z-10 h-full bg-slate-950">
-            <StreamingChat fullHeight />
+            <StreamingChat fullHeight onIrACentro={irACentroEnMapa} />
           </div>
         )}
 
@@ -431,6 +505,11 @@ export default function HomeApp() {
               onFormChange={setNecesidadForm}
               onSubmit={agregarNecesidad}
               guardando={guardandoNecesidad}
+              mensajeInicial={
+                hintNuevoLugar
+                  ? `Lugar «${hintNuevoLugar}» creado. Indica qué necesita.`
+                  : undefined
+              }
             />
           </div>
         )}
@@ -461,6 +540,12 @@ export default function HomeApp() {
           if (tab === "errores" && !isDesktop) setTab("mapa");
         }}
         centros={centros}
+      />
+      <AdminPanel
+        open={adminOpen}
+        onClose={() => setAdminOpen(false)}
+        centros={centros}
+        onDataChange={refrescarDatosAdmin}
       />
 
       {!isDesktop && (

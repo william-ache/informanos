@@ -26,6 +26,7 @@ interface ReportarFormProps {
   onFormChange: React.Dispatch<React.SetStateAction<NecesidadFormState>>;
   onSubmit: (event: React.FormEvent) => void;
   guardando: boolean;
+  mensajeInicial?: string;
 }
 
 export default function ReportarForm({
@@ -35,6 +36,7 @@ export default function ReportarForm({
   onFormChange,
   onSubmit,
   guardando,
+  mensajeInicial,
 }: ReportarFormProps) {
   return (
     <form
@@ -42,9 +44,15 @@ export default function ReportarForm({
       className={`overflow-y-auto bg-slate-900 ${compact ? "flex h-full min-h-0 flex-col p-4 lg:p-5" : "border-t border-slate-800 p-4"}`}
     >
       <p className="mb-1 text-lg font-bold text-red-300">Registrar necesidad</p>
-      <p className="mb-4 text-sm text-slate-400">
-        Indica qué insumos faltan en un centro de acopio.
-      </p>
+      {mensajeInicial ? (
+        <p className="mb-4 rounded-xl border border-emerald-800/50 bg-emerald-950/30 px-3 py-2.5 text-sm text-emerald-200">
+          {mensajeInicial}
+        </p>
+      ) : (
+        <p className="mb-4 text-sm text-slate-400">
+          Indica qué insumos faltan en un centro de acopio.
+        </p>
+      )}
 
       <SearchableSelect
         required
