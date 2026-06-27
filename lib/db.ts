@@ -80,6 +80,23 @@ export async function ensureSchema(): Promise<void> {
         }
       }
 
+      const tipoLugarAlters = [
+        `ALTER TABLE centros_acopio ADD COLUMN tipo_lugar ENUM('acopio', 'urgencia', 'donacion', 'peligro') NOT NULL DEFAULT 'acopio' AFTER aprox_animales`,
+        `ALTER TABLE centros_acopio ADD COLUMN donacion_limite DATETIME NULL AFTER tipo_lugar`,
+        `ALTER TABLE centros_acopio ADD COLUMN donacion_necesita TEXT NULL AFTER donacion_limite`,
+        `ALTER TABLE centros_acopio ADD COLUMN donacion_destino TEXT NULL AFTER donacion_necesita`,
+        `ALTER TABLE centros_acopio ADD COLUMN donacion_transporte TINYINT(1) NULL AFTER donacion_destino`,
+      ];
+
+      for (const sql of tipoLugarAlters) {
+        try {
+          await pool.query(sql);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (!message.includes("Duplicate column")) throw error;
+        }
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

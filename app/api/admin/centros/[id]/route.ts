@@ -4,6 +4,7 @@ import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import { requireAdmin } from "@/lib/admin-auth";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
+import { parseDonacionLimite, parseTipoLugar } from "@/lib/tipo-lugar";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -89,6 +90,40 @@ export async function PATCH(request: Request, { params }: Params) {
     if ("aprox_animales" in body) {
       campos.push("aprox_animales = ?");
       valores.push(parsePoblacion(body.aprox_animales));
+    }
+    if ("tipo_lugar" in body) {
+      campos.push("tipo_lugar = ?");
+      valores.push(parseTipoLugar(body.tipo_lugar));
+    }
+    if ("donacion_limite" in body) {
+      campos.push("donacion_limite = ?");
+      valores.push(parseDonacionLimite(body.donacion_limite));
+    }
+    if ("donacion_necesita" in body) {
+      campos.push("donacion_necesita = ?");
+      valores.push(
+        typeof body.donacion_necesita === "string"
+          ? body.donacion_necesita.trim() || null
+          : null,
+      );
+    }
+    if ("donacion_destino" in body) {
+      campos.push("donacion_destino = ?");
+      valores.push(
+        typeof body.donacion_destino === "string"
+          ? body.donacion_destino.trim() || null
+          : null,
+      );
+    }
+    if ("donacion_transporte" in body) {
+      campos.push("donacion_transporte = ?");
+      valores.push(
+        body.donacion_transporte === true
+          ? 1
+          : body.donacion_transporte === false
+            ? 0
+            : null,
+      );
     }
 
     if (campos.length === 0) {

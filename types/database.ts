@@ -20,6 +20,7 @@ export interface ReporteError {
 export type UrgenciaNivel = "alta" | "media" | "baja";
 export type NecesidadEstado = "disponible" | "agotado";
 export type VerificarAccion = "confirmar_disponible" | "reportar_agotado";
+export type TipoLugar = "acopio" | "urgencia" | "donacion" | "peligro";
 
 export interface Necesidad {
   id: string;
@@ -45,6 +46,11 @@ export interface CentroAcopio {
   aprox_personas: number | null;
   aprox_ancianos: number | null;
   aprox_animales: number | null;
+  tipo_lugar: TipoLugar;
+  donacion_limite: string | null;
+  donacion_necesita: string | null;
+  donacion_destino: string | null;
+  donacion_transporte: boolean | null;
   creado_en: string;
   necesidades?: Necesidad[];
 }
@@ -61,6 +67,11 @@ export type NuevoCentroAcopio = Pick<
   | "aprox_personas"
   | "aprox_ancianos"
   | "aprox_animales"
+  | "tipo_lugar"
+  | "donacion_limite"
+  | "donacion_necesita"
+  | "donacion_destino"
+  | "donacion_transporte"
 >;
 
 export interface ChatMensaje {

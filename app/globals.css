@@ -29,6 +29,21 @@ textarea {
   font-family: inherit;
 }
 
+.centro-marker-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.centro-marker-pin {
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
 /* Popup compacto: arrastrar en la tarjeta mueve el mapa; solo botones/enlaces capturan toque */
 .leaflet-popup.centro-popup {
   pointer-events: none;

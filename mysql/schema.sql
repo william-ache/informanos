@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS centros_acopio (
   aprox_personas INT NULL,
   aprox_ancianos INT NULL,
   aprox_animales INT NULL,
+  tipo_lugar ENUM('acopio', 'urgencia', 'donacion', 'peligro') NOT NULL DEFAULT 'acopio',
+  donacion_limite DATETIME NULL,
+  donacion_necesita TEXT NULL,
+  donacion_destino TEXT NULL,
+  donacion_transporte TINYINT(1) NULL,
   creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

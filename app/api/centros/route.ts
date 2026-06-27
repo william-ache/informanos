@@ -1,48 +1,21 @@
 import { randomUUID } from "crypto";
-import type { RowDataPacket } from "mysql2";
 import { NextResponse } from "next/server";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
 import { publicarEnChat } from "@/lib/chat-actividad";
+import {
+  CENTRO_SELECT,
+  mapCentro,
+  type CentroRow,
+} from "@/lib/centro-map";
 import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
+import {
+  mensajeChatNuevoLugar,
+  parseDonacionLimite,
+  parseTipoLugar,
+} from "@/lib/tipo-lugar";
 import type { CentroAcopio, Necesidad, NuevoCentroAcopio } from "@/types/database";
-
-interface CentroRow extends RowDataPacket {
-  id: string;
-  nombre: string;
-  municipio: string;
-  direccion: string | null;
-  latitud: string | number;
-  longitud: string | number;
-  contacto: string | null;
-  aprox_ninos: number | null;
-  aprox_personas: number | null;
-  aprox_ancianos: number | null;
-  aprox_animales: number | null;
-  creado_en: string;
-}
-
-function mapCentro(row: CentroRow, necesidades: Necesidad[]): CentroAcopio {
-  return {
-    id: row.id,
-    nombre: row.nombre,
-    municipio: row.municipio,
-    direccion: row.direccion,
-    latitud: Number(row.latitud),
-    longitud: Number(row.longitud),
-    contacto: row.contacto,
-    aprox_ninos: row.aprox_ninos === null ? null : Number(row.aprox_ninos),
-    aprox_personas:
-      row.aprox_personas === null ? null : Number(row.aprox_personas),
-    aprox_ancianos:
-      row.aprox_ancianos === null ? null : Number(row.aprox_ancianos),
-    aprox_animales:
-      row.aprox_animales === null ? null : Number(row.aprox_animales),
-    creado_en: row.creado_en,
-    necesidades,
-  };
-}
 
 export async function GET() {
   const configError = requireDb();
@@ -52,8 +25,7 @@ export async function GET() {
     await ensureSchema();
 
     const [centrosRows] = await pool.query<CentroRow[]>(
-      `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto,
-              aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales, creado_en
+      `SELECT ${CENTRO_SELECT}
        FROM centros_acopio
        ORDER BY nombre ASC`,
     );
@@ -86,6 +58,7 @@ export async function POST(request: Request) {
   if (configError) return configError;
 
   try {
+    await ensureSchema();
     const body = parseJsonBody<Record<string, unknown>>(await request.json());
     if (!body) {
       return NextResponse.json({ error: "Cuerpo JSON inválido." }, { status: 400 });
@@ -95,6 +68,7 @@ export async function POST(request: Request) {
     const municipio = typeof body.municipio === "string" ? body.municipio.trim() : "";
     const latitud = toNumber(body.latitud);
     const longitud = toNumber(body.longitud);
+    const tipoLugar = parseTipoLugar(body.tipo_lugar);
 
     if (!nombre || !municipio || latitud === null || longitud === null) {
       return NextResponse.json(
@@ -110,6 +84,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: MENSAJE_FUERA_ARAGUA }, { status: 400 });
     }
 
+    const donacionNecesita =
+      typeof body.donacion_necesita === "string"
+        ? body.donacion_necesita.trim() || null
+        : null;
+    const donacionDestino =
+      typeof body.donacion_destino === "string"
+        ? body.donacion_destino.trim() || null
+        : null;
+    const donacionLimite = parseDonacionLimite(body.donacion_limite);
+    const donacionTransporte =
+      body.donacion_transporte === true
+        ? true
+        : body.donacion_transporte === false
+          ? false
+          : null;
+
+    if (tipoLugar === "donacion" && !donacionNecesita) {
+      return NextResponse.json(
+        { error: "Indica qué se recoge o qué se necesita en la zona de donación." },
+        { status: 400 },
+      );
+    }
+
     const centro: NuevoCentroAcopio = {
       nombre,
       municipio,
@@ -123,6 +120,11 @@ export async function POST(request: Request) {
       aprox_personas: parsePoblacion(body.aprox_personas),
       aprox_ancianos: parsePoblacion(body.aprox_ancianos),
       aprox_animales: parsePoblacion(body.aprox_animales),
+      tipo_lugar: tipoLugar,
+      donacion_limite: tipoLugar === "donacion" ? donacionLimite : null,
+      donacion_necesita: tipoLugar === "donacion" ? donacionNecesita : null,
+      donacion_destino: tipoLugar === "donacion" ? donacionDestino : null,
+      donacion_transporte: tipoLugar === "donacion" ? donacionTransporte : null,
     };
 
     const id = randomUUID();
@@ -130,8 +132,9 @@ export async function POST(request: Request) {
     await pool.execute(
       `INSERT INTO centros_acopio
         (id, nombre, municipio, direccion, latitud, longitud, contacto,
-         aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales,
+         tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         centro.nombre,
@@ -144,12 +147,16 @@ export async function POST(request: Request) {
         centro.aprox_personas,
         centro.aprox_ancianos,
         centro.aprox_animales,
+        centro.tipo_lugar,
+        centro.donacion_limite,
+        centro.donacion_necesita,
+        centro.donacion_destino,
+        centro.donacion_transporte === null ? null : centro.donacion_transporte ? 1 : 0,
       ],
     );
 
     const [rows] = await pool.query<CentroRow[]>(
-      `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto,
-              aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales, creado_en
+      `SELECT ${CENTRO_SELECT}
        FROM centros_acopio
        WHERE id = ?`,
       [id],
@@ -164,7 +171,7 @@ export async function POST(request: Request) {
     }
 
     await publicarEnChat(
-      `📍 Nuevo lugar: ${centro.nombre} · ${centro.municipio}`,
+      mensajeChatNuevoLugar(centro.tipo_lugar, centro.nombre, centro.municipio),
       id,
     );
 

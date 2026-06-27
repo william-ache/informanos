@@ -4,12 +4,18 @@ import dynamic from "next/dynamic";
 import type { CentroAcopio } from "@/types/database";
 import type { FiltroPoblacion as FiltroPoblacionState } from "@/lib/poblacion";
 import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
+import type { FiltroTipoLugar } from "@/lib/tipo-lugar";
+import { colorTipoLugar, etiquetaTipoLugar } from "@/lib/tipo-lugar";
 
 const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
   ssr: false,
 });
 
 const FiltroPoblacion = dynamic(() => import("@/components/FiltroPoblacion"), {
+  ssr: false,
+});
+
+const FiltroTipoLugar = dynamic(() => import("@/components/FiltroTipoLugar"), {
   ssr: false,
 });
 
@@ -27,6 +33,8 @@ interface CentrosListProps {
   onQueryChange: (query: string) => void;
   filtroPoblacion: FiltroPoblacionState;
   onFiltroPoblacionChange: (value: FiltroPoblacionState) => void;
+  filtroTipoLugar: FiltroTipoLugar;
+  onFiltroTipoLugarChange: (value: FiltroTipoLugar) => void;
   isLoading: boolean;
   errorMsg: string | null;
   onReportarCentro: (centro: CentroAcopio) => void;
@@ -42,6 +50,8 @@ export default function CentrosList({
   onQueryChange,
   filtroPoblacion,
   onFiltroPoblacionChange,
+  filtroTipoLugar,
+  onFiltroTipoLugarChange,
   isLoading,
   errorMsg,
   onReportarCentro,
@@ -69,6 +79,7 @@ export default function CentrosList({
           placeholder="Buscar por nombre o municipio…"
         />
         <FiltroPoblacion value={filtroPoblacion} onChange={onFiltroPoblacionChange} />
+        <FiltroTipoLugar value={filtroTipoLugar} onChange={onFiltroTipoLugarChange} />
       </div>
 
       <div className={listWrap}>
@@ -103,6 +114,14 @@ export default function CentrosList({
                     <span className="mt-1.5 h-3 w-3 shrink-0 animate-pulse rounded-full bg-red-500" />
                   )}
                   <div className="min-w-0 flex-1">
+                    <span
+                      className="mb-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
+                      style={{
+                        backgroundColor: colorTipoLugar(centro.tipo_lugar ?? "acopio"),
+                      }}
+                    >
+                      {etiquetaTipoLugar(centro.tipo_lugar ?? "acopio").split(" ")[0]}
+                    </span>
                     <p className="font-semibold leading-snug">{centro.nombre}</p>
                     <p className="text-sm text-slate-400">{centro.municipio}</p>
                     {tienePoblacion(centro) && (
@@ -133,6 +152,9 @@ export default function CentrosList({
                         ))}
                       </ul>
                     )}
+                    {(centro.tipo_lugar === "acopio" ||
+                      centro.tipo_lugar === "urgencia" ||
+                      !centro.tipo_lugar) && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -143,6 +165,7 @@ export default function CentrosList({
                     >
                       + Reportar necesidad
                     </button>
+                    )}
                   </div>
                 </div>
               </li>

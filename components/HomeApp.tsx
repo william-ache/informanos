@@ -14,6 +14,12 @@ import {
   filtroPoblacionVacio,
   type FiltroPoblacion as FiltroPoblacionState,
 } from "@/lib/poblacion";
+import {
+  cumpleFiltroTipoLugar,
+  donacionVigente,
+  filtroTipoLugarInicial,
+  type FiltroTipoLugar,
+} from "@/lib/tipo-lugar";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
@@ -25,7 +31,7 @@ import {
   consumirInstalacionPendiente,
 } from "@/lib/pwa-install";
 import { obtenerConsentimientoPrivacidad, PRIVACIDAD_EVENT } from "@/lib/privacidad";
-import type { CentroAcopio, NuevoCentroAcopio, UrgenciaNivel } from "@/types/database";
+import type { CentroAcopio, NuevoCentroAcopio, TipoLugar, UrgenciaNivel } from "@/types/database";
 
 const Map = dynamic(() => import("@/components/Map"), {
   ssr: false,
@@ -61,6 +67,10 @@ const CentrosList = dynamic(() => import("@/components/CentrosList"), {
   ssr: false,
 });
 
+const DonacionesTab = dynamic(() => import("@/components/DonacionesTab"), {
+  ssr: false,
+});
+
 const PoliticaPrivacidadModal = dynamic(
   () => import("@/components/PoliticaPrivacidadModal"),
   { ssr: false },
@@ -81,7 +91,7 @@ const InstalarAppModal = dynamic(() => import("@/components/InstalarAppModal"), 
 
 const CENTROS_KEY = "/api/centros";
 
-type Tab = "mapa" | "centros" | "chat" | "reportar" | "errores";
+type Tab = "mapa" | "centros" | "chat" | "reportar" | "donaciones";
 type DesktopPanel = "centros" | "reportar" | "chat";
 
 const desktopTabs: { id: DesktopPanel; label: string }[] = [
@@ -95,7 +105,7 @@ const tabs: { id: Tab; label: string; short: string }[] = [
   { id: "centros", label: "Centros", short: "C" },
   { id: "chat", label: "Chat", short: "H" },
   { id: "reportar", label: "Reportar", short: "!" },
-  { id: "errores", label: "Errores", short: "E" },
+  { id: "donaciones", label: "Donaciones", short: "D" },
 ];
 
 const emptyNecesidad = {
@@ -127,6 +137,11 @@ export default function HomeApp() {
   const [filtroPoblacion, setFiltroPoblacion] = useState<FiltroPoblacionState>(
     filtroPoblacionVacio,
   );
+  const [filtroTipoLugar, setFiltroTipoLugar] =
+    useState<FiltroTipoLugar>(filtroTipoLugarInicial);
+  const [tipoLugarInicial, setTipoLugarInicial] = useState<TipoLugar | null>(
+    null,
+  );
   const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
   const [instalarAppOpen, setInstalarAppOpen] = useState(false);
   const pageVisible = usePageVisible();
@@ -156,10 +171,6 @@ export default function HomeApp() {
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
-
-  useEffect(() => {
-    if (tab === "errores") setErrorModalOpen(true);
-  }, [tab]);
 
   useEffect(() => {
     function intentarMostrarInstalar() {
@@ -196,10 +207,11 @@ export default function HomeApp() {
         );
       }
       list = list.filter((c) => cumpleFiltroPoblacion(c, filtroPoblacion));
+      list = list.filter((c) => cumpleFiltroTipoLugar(c, filtroTipoLugar));
     }
 
     return list;
-  }, [centros, textoBusqueda, centroActivoId, filtroPoblacion]);
+  }, [centros, textoBusqueda, centroActivoId, filtroPoblacion, filtroTipoLugar]);
 
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
@@ -210,6 +222,11 @@ export default function HomeApp() {
   }, []);
 
   const irAReportarTrasCrear = useCallback((centro: CentroAcopio) => {
+    if (centro.tipo_lugar !== "acopio" && centro.tipo_lugar !== "urgencia") {
+      setAgregarMenuOpen(false);
+      setHintNuevoLugar(null);
+      return;
+    }
     setAgregarMenuOpen(false);
     setCentroActivoId(null);
     setNecesidadForm({ ...emptyNecesidad, centro_id: centro.id });
@@ -248,6 +265,20 @@ export default function HomeApp() {
   const refrescarDatosAdmin = useCallback(async () => {
     await mutate(CENTROS_KEY);
     await mutate("/api/chat");
+  }, []);
+
+  const donacionesActivas = useMemo(
+    () =>
+      centros.filter(
+        (c) => c.tipo_lugar === "donacion" && donacionVigente(c),
+      ).length,
+    [centros],
+  );
+
+  const iniciarDonacion = useCallback(() => {
+    setTipoLugarInicial("donacion");
+    setAgregarMenuOpen(true);
+    setTab("mapa");
   }, []);
 
   const urgentes = useMemo(
@@ -406,6 +437,8 @@ export default function HomeApp() {
                 onQueryChange={setTextoBusqueda}
                 filtroPoblacion={filtroPoblacion}
                 onFiltroPoblacionChange={setFiltroPoblacion}
+                filtroTipoLugar={filtroTipoLugar}
+                onFiltroTipoLugarChange={setFiltroTipoLugar}
                 isLoading={isLoading}
                 errorMsg={errorMsg}
                 onReportarCentro={abrirReporteCentro}
@@ -494,6 +527,8 @@ export default function HomeApp() {
             onVerCentroLista={verCentroEnLista}
             onRegistrarCentro={onRegistrarCentro}
             onLugarCreado={irAReportarTrasCrear}
+            tipoLugarInicial={tipoLugarInicial}
+            onTipoLugarInicialConsumido={() => setTipoLugarInicial(null)}
             hideAgregarButton={!isDesktop}
             agregarMenuOpen={agregarMenuOpen}
             onAgregarMenuChange={setAgregarMenuOpen}
@@ -515,6 +550,8 @@ export default function HomeApp() {
               onQueryChange={setTextoBusqueda}
               filtroPoblacion={filtroPoblacion}
               onFiltroPoblacionChange={setFiltroPoblacion}
+              filtroTipoLugar={filtroTipoLugar}
+              onFiltroTipoLugarChange={setFiltroTipoLugar}
               isLoading={isLoading}
               errorMsg={errorMsg}
               onReportarCentro={abrirReporteCentro}
@@ -546,23 +583,31 @@ export default function HomeApp() {
           </div>
         )}
 
-        {!isDesktop && tab === "errores" && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900 p-6 text-center">
-            <p className="text-lg font-bold text-amber-300">Reportar errores</p>
-            <p className="mt-2 max-w-sm text-sm text-slate-400">
-              Fallos del sistema, datos incorrectos o información falsa para
-              corregirla pronto.
-            </p>
-            <button
-              type="button"
-              onClick={() => setErrorModalOpen(true)}
-              className="mt-6 w-full max-w-xs rounded-xl bg-amber-600 py-3.5 text-base font-bold text-white active:bg-amber-500"
-            >
-              Abrir formulario
-            </button>
+        {!isDesktop && tab === "donaciones" && (
+          <div className="absolute inset-0 z-10 flex flex-col bg-slate-900">
+            <DonacionesTab
+              centros={centros}
+              onAgregarDonacion={iniciarDonacion}
+              onVerEnMapa={(centroId) => {
+                setCentroActivoId(centroId);
+                setTab("mapa");
+              }}
+            />
           </div>
         )}
       </main>
+
+      {!isDesktop && (
+        <button
+          type="button"
+          onClick={() => setErrorModalOpen(true)}
+          className="fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-3 z-40 flex h-11 items-center gap-1.5 rounded-full border border-amber-700/60 bg-amber-950/90 px-3.5 text-xs font-bold text-amber-200 shadow-lg backdrop-blur active:scale-95 lg:bottom-6"
+          aria-label="Reportar error"
+        >
+          <span className="text-sm">⚠</span>
+          Errores
+        </button>
+      )}
 
       <PoliticaPrivacidadModal open={privacidadPendiente} />
       <InstalarAppModal
@@ -576,10 +621,7 @@ export default function HomeApp() {
       />
       <ReportarErrorModal
         open={errorModalOpen}
-        onClose={() => {
-          setErrorModalOpen(false);
-          if (tab === "errores" && !isDesktop) setTab("mapa");
-        }}
+        onClose={() => setErrorModalOpen(false)}
         centros={centros}
       />
       <AdminPanel
@@ -593,7 +635,12 @@ export default function HomeApp() {
         <nav className="relative z-30 flex shrink-0 border-t border-slate-800 bg-slate-950 pb-safe">
           {tabs.map((item) => {
             const active = tab === item.id;
-            const badge = item.id === "centros" ? urgentes : 0;
+            const badge =
+              item.id === "centros"
+                ? urgentes
+                : item.id === "donaciones"
+                  ? donacionesActivas
+                  : 0;
 
             return (
               <button
@@ -613,7 +660,11 @@ export default function HomeApp() {
                 </span>
                 {item.label}
                 {badge > 0 && (
-                  <span className="absolute right-1/4 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                  <span
+                    className={`absolute right-1/4 top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ${
+                      item.id === "donaciones" ? "bg-emerald-600" : "bg-red-600"
+                    }`}
+                  >
                     {badge}
                   </span>
                 )}

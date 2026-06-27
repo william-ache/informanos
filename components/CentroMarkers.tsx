@@ -4,7 +4,13 @@ import { memo, useEffect, useRef } from "react";
 import { Marker, Popup } from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
 import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
+import { iconoCentro } from "@/lib/leaflet-icons";
+import { formatFechaHumana } from "@/lib/formatFecha";
 import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
+import {
+  colorTipoLugar,
+  etiquetaTipoLugar,
+} from "@/lib/tipo-lugar";
 import type { CentroAcopio } from "@/types/database";
 
 function urgenciaClass(urgencia: string) {
@@ -50,6 +56,7 @@ function CentroMarkerItem({
     <Marker
       ref={markerRef}
       position={[centro.latitud, centro.longitud]}
+      icon={iconoCentro(centro.tipo_lugar ?? "acopio")}
       eventHandlers={{
         click: () => markerRef.current?.openPopup(),
       }}
@@ -65,6 +72,14 @@ function CentroMarkerItem({
       >
         <div className="centro-popup-inner w-[min(240px,calc(100vw-3.5rem))] text-slate-900">
           <div className="pr-7">
+            <span
+              className="mb-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
+              style={{
+                backgroundColor: colorTipoLugar(centro.tipo_lugar ?? "acopio"),
+              }}
+            >
+              {etiquetaTipoLugar(centro.tipo_lugar ?? "acopio").split(" ")[0]}
+            </span>
             <p className="line-clamp-2 text-[13px] font-bold leading-snug">
               {centro.nombre}
             </p>
@@ -90,6 +105,32 @@ function CentroMarkerItem({
             </p>
           )}
 
+          {centro.tipo_lugar === "donacion" ? (
+            <div className="centro-popup-scroll mt-2 border-t border-slate-200 pt-2 text-[10px] leading-snug">
+              {centro.donacion_necesita && (
+                <p>
+                  <span className="font-semibold text-emerald-700">Recogen: </span>
+                  {centro.donacion_necesita}
+                </p>
+              )}
+              {centro.donacion_destino && (
+                <p className="mt-1">
+                  <span className="font-semibold">Destino: </span>
+                  {centro.donacion_destino}
+                </p>
+              )}
+              {centro.donacion_limite && (
+                <p className="mt-1 text-amber-700">
+                  Hasta: {formatFechaHumana(centro.donacion_limite)}
+                </p>
+              )}
+              {centro.donacion_transporte && (
+                <p className="mt-1 font-semibold text-orange-700">
+                  Solicita transporte
+                </p>
+              )}
+            </div>
+          ) : (
           <div className="centro-popup-scroll mt-2 border-t border-slate-200 pt-2">
             {centro.necesidades && centro.necesidades.length > 0 ? (
               <ul className="space-y-1 text-[10px] leading-snug">
@@ -110,6 +151,7 @@ function CentroMarkerItem({
               <p className="text-[10px] text-slate-500">Sin necesidades.</p>
             )}
           </div>
+          )}
 
           <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
             <div className="grid grid-cols-2 gap-1.5">
@@ -120,7 +162,10 @@ function CentroMarkerItem({
               >
                 Como llegar
               </button>
-              {onReportar && (
+              {onReportar &&
+                (centro.tipo_lugar === "acopio" ||
+                  centro.tipo_lugar === "urgencia" ||
+                  !centro.tipo_lugar) && (
                 <button
                   type="button"
                   onClick={() => onReportar(centro)}

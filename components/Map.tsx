@@ -13,10 +13,11 @@ import AraguaBoundary from "@/components/AraguaBoundary";
 import AgregarLugarSheet from "@/components/AgregarLugarSheet";
 import ReportarCentroModal from "@/components/ReportarCentroModal";
 import ModalPortal from "@/components/ModalPortal";
-import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
+import type { CentroAcopio, NuevoCentroAcopio, TipoLugar } from "@/types/database";
 import { detectarLugar } from "@/lib/geocoding";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import { parsePoblacionInput } from "@/lib/poblacion";
+import { TIPO_LUGAR_OPCIONES } from "@/lib/tipo-lugar";
 import { configureLeafletIcons } from "@/lib/leaflet-icons";
 import "leaflet/dist/leaflet.css";
 
@@ -24,6 +25,7 @@ const ARAGUA_CENTER: [number, number] = [10.25, -67.45];
 const INITIAL_ZOOM = 10;
 
 interface FormState {
+  tipoLugar: TipoLugar;
   nombre: string;
   municipio: string;
   direccion: string;
@@ -32,9 +34,14 @@ interface FormState {
   aproxPersonas: string;
   aproxAncianos: string;
   aproxAnimales: string;
+  donacionLimite: string;
+  donacionNecesita: string;
+  donacionDestino: string;
+  donacionTransporte: boolean;
 }
 
-const emptyForm = (): FormState => ({
+const emptyForm = (tipoLugar: TipoLugar = "acopio"): FormState => ({
+  tipoLugar,
   nombre: "",
   municipio: "",
   direccion: "",
@@ -43,6 +50,10 @@ const emptyForm = (): FormState => ({
   aproxPersonas: "",
   aproxAncianos: "",
   aproxAnimales: "",
+  donacionLimite: "",
+  donacionNecesita: "",
+  donacionDestino: "",
+  donacionTransporte: false,
 });
 
 interface MapProps {
@@ -52,6 +63,8 @@ interface MapProps {
   onVerCentroLista?: (centro: CentroAcopio) => void;
   onRegistrarCentro?: (centro: NuevoCentroAcopio) => Promise<CentroAcopio>;
   onLugarCreado?: (centro: CentroAcopio) => void;
+  tipoLugarInicial?: TipoLugar | null;
+  onTipoLugarInicialConsumido?: () => void;
   className?: string;
   active?: boolean;
   hideAgregarButton?: boolean;
@@ -113,6 +126,8 @@ function MapView({
   onVerCentroLista,
   onRegistrarCentro,
   onLugarCreado,
+  tipoLugarInicial,
+  onTipoLugarInicialConsumido,
   className = "",
   active = true,
   hideAgregarButton = false,
@@ -154,7 +169,7 @@ function MapView({
 
     setAlertaZona(null);
     setCoords({ lat, lng });
-    setForm(emptyForm());
+    setForm(emptyForm(tipoLugarInicial ?? "acopio"));
     setModalAbierto(true);
     setSeleccionMapa(false);
     setCargandoLugar(true);
@@ -169,6 +184,7 @@ function MapView({
       }));
     }
     setCargandoLugar(false);
+    if (tipoLugarInicial) onTipoLugarInicialConsumido?.();
   }
 
   function handleMapClick(lat: number, lng: number) {
@@ -208,6 +224,11 @@ function MapView({
     event.preventDefault();
     if (!coords || !onRegistrarCentro) return;
 
+    if (form.tipoLugar === "donacion" && !form.donacionNecesita.trim()) {
+      setAlertaZona("Indica qué se recoge o qué se necesita.");
+      return;
+    }
+
     if (!puntoEnAragua(coords.lat, coords.lng)) {
       setAlertaZona(MENSAJE_FUERA_ARAGUA);
       cerrarModal();
@@ -230,6 +251,21 @@ function MapView({
         aprox_personas: parsePoblacionInput(form.aproxPersonas),
         aprox_ancianos: parsePoblacionInput(form.aproxAncianos),
         aprox_animales: parsePoblacionInput(form.aproxAnimales),
+        tipo_lugar: form.tipoLugar,
+        donacion_limite:
+          form.tipoLugar === "donacion" && form.donacionLimite
+            ? form.donacionLimite
+            : null,
+        donacion_necesita:
+          form.tipoLugar === "donacion"
+            ? form.donacionNecesita.trim()
+            : null,
+        donacion_destino:
+          form.tipoLugar === "donacion"
+            ? form.donacionDestino.trim() || null
+            : null,
+        donacion_transporte:
+          form.tipoLugar === "donacion" ? form.donacionTransporte : null,
       });
       cerrarModal();
       setSeleccionMapa(false);
@@ -344,7 +380,7 @@ function MapView({
               className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 pb-safe text-slate-900 shadow-2xl lg:max-w-md lg:rounded-2xl lg:pb-5"
             >
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 lg:hidden" />
-              <h2 className="text-lg font-bold">Nuevo lugar de ayuda</h2>
+              <h2 className="text-lg font-bold">Nuevo lugar</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
@@ -353,6 +389,45 @@ function MapView({
                   Detectando nombre y dirección…
                 </p>
               )}
+
+              <fieldset className="mt-3">
+                <legend className="text-sm font-medium">Tipo de lugar *</legend>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {TIPO_LUGAR_OPCIONES.map(({ value, label, color }) => (
+                    <label
+                      key={value}
+                      className={`flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 text-left text-[11px] leading-snug ${
+                        form.tipoLugar === value
+                          ? "border-slate-900 bg-slate-50 ring-2 ring-offset-1"
+                          : "border-slate-300"
+                      }`}
+                      style={
+                        form.tipoLugar === value
+                          ? ({ ringColor: color } as React.CSSProperties)
+                          : undefined
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="tipoLugar"
+                        value={value}
+                        checked={form.tipoLugar === value}
+                        onChange={() =>
+                          setForm((prev) => ({ ...prev, tipoLugar: value }))
+                        }
+                        className="mt-0.5"
+                      />
+                      <span>
+                        <span
+                          className="mr-1 inline-block h-2 w-2 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                        {label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <label className="mt-3 block text-sm font-medium">
                 Nombre del lugar *
@@ -459,6 +534,73 @@ function MapView({
                   + Agregar otro número
                 </button>
               </div>
+
+              {form.tipoLugar === "donacion" && (
+                <div className="mt-3 space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                  <p className="text-xs font-semibold text-emerald-800">
+                    Datos de la recolección
+                  </p>
+                  <label className="block text-sm font-medium">
+                    Qué recogen / qué se necesita *
+                    <textarea
+                      required
+                      rows={2}
+                      value={form.donacionNecesita}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          donacionNecesita: e.target.value,
+                        }))
+                      }
+                      placeholder="Ej: agua, medicinas, ropa…"
+                      className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium">
+                    Fecha y hora límite
+                    <input
+                      type="datetime-local"
+                      value={form.donacionLimite}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          donacionLimite: e.target.value,
+                        }))
+                      }
+                      className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium">
+                    A dónde llevarán lo recogido
+                    <textarea
+                      rows={2}
+                      value={form.donacionDestino}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          donacionDestino: e.target.value,
+                        }))
+                      }
+                      placeholder="Centro destino, comunidad, etc."
+                      className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={form.donacionTransporte}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          donacionTransporte: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded"
+                    />
+                    Solicitamos transporte para llevar la donación
+                  </label>
+                </div>
+              )}
 
               <div className="mt-5 flex gap-3">
                 <button
