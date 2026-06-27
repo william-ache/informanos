@@ -56,15 +56,15 @@ function CentroMarkerItem({
       opacity={activo ? 1 : 0.45}
     >
       <Popup
-        maxWidth={240}
+        maxWidth={268}
         offset={[0, -6]}
         autoPan={false}
         closeOnClick={false}
         autoClose={false}
         className="centro-popup"
       >
-        <div className="centro-popup-inner w-[min(230px,calc(100vw-3rem))] px-0.5 pb-0.5 text-slate-900">
-          <div className="pr-6">
+        <div className="centro-popup-inner w-[min(240px,calc(100vw-3.5rem))] text-slate-900">
+          <div className="pr-7">
             <p className="line-clamp-2 text-[13px] font-bold leading-snug">
               {centro.nombre}
             </p>

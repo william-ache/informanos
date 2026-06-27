@@ -36,18 +36,20 @@ textarea {
 
 .leaflet-popup.centro-popup .leaflet-popup-content-wrapper {
   pointer-events: none;
-  border-radius: 10px;
-  padding: 0;
+  border-radius: 12px;
+  padding: 14px 14px 16px;
 }
 
 .leaflet-popup.centro-popup .leaflet-popup-content {
-  margin: 10px 12px 12px 10px;
+  margin: 0 !important;
+  padding: 0;
+  width: auto !important;
 }
 
 .leaflet-popup.centro-popup .leaflet-popup-close-button {
   pointer-events: auto;
-  top: 4px;
-  right: 4px;
+  top: 8px;
+  right: 8px;
   width: 24px;
   height: 24px;
   padding: 0;
