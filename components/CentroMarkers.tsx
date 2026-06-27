@@ -14,6 +14,7 @@ import {
 import type { CentroAcopio } from "@/types/database";
 import CentroVotoTipo from "@/components/CentroVotoTipo";
 import CentroEditarModal from "@/components/CentroEditarModal";
+import CentroVotoOperativo from "@/components/CentroVotoOperativo";
 
 function urgenciaClass(urgencia: string) {
   if (urgencia === "alta") return "font-semibold text-red-600";
@@ -172,6 +173,9 @@ function CentroMarkerItem({
 
           <div className="centro-popup-scroll mt-2 border-t border-slate-200 pt-2">
             <CentroVotoTipo centro={centro} compact />
+            <div className="mt-1.5">
+              <CentroVotoOperativo centro={centro} modo="finalizar" compact />
+            </div>
           </div>
 
           <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">

@@ -20,6 +20,11 @@ import {
   filtroTipoLugarInicial,
   type FiltroTipoLugar,
 } from "@/lib/tipo-lugar";
+import {
+  centroEnHistorial,
+  centroVisibleEnMapa,
+  type VistaCentros,
+} from "@/lib/centro-operativo";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
@@ -146,6 +151,7 @@ export default function HomeApp() {
   const [tipoLugarInicial, setTipoLugarInicial] = useState<TipoLugar | null>(
     null,
   );
+  const [vistaCentros, setVistaCentros] = useState<VistaCentros>("activos");
   const [mapUiModal, setMapUiModal] = useState(false);
   const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
   const [instalarAppOpen, setInstalarAppOpen] = useState(false);
@@ -196,27 +202,49 @@ export default function HomeApp() {
     return () => window.removeEventListener(PRIVACIDAD_EVENT, onPrivacidadCambiada);
   }, [pwaInstall.puedeOfrecer]);
 
-  const centrosFiltrados = useMemo(() => {
-    let list = centros;
+  const centrosActivos = useMemo(
+    () => centros.filter((c) => centroVisibleEnMapa(c)),
+    [centros],
+  );
 
-    if (centroActivoId) {
-      list = list.filter((c) => c.id === centroActivoId);
-    } else {
+  const centrosHistorial = useMemo(
+    () => centros.filter((c) => centroEnHistorial(c)),
+    [centros],
+  );
+
+  const aplicarFiltrosLista = useCallback(
+    (list: CentroAcopio[]) => {
+      let result = list;
+
+      if (centroActivoId) {
+        return result.filter((c) => c.id === centroActivoId);
+      }
+
       const q = textoBusqueda.trim().toLowerCase();
       if (q) {
-        list = list.filter(
+        result = result.filter(
           (c) =>
             c.municipio.toLowerCase().includes(q) ||
             c.nombre.toLowerCase().includes(q) ||
             (c.direccion?.toLowerCase().includes(q) ?? false),
         );
       }
-      list = list.filter((c) => cumpleFiltroPoblacion(c, filtroPoblacion));
-      list = list.filter((c) => cumpleFiltroTipoLugar(c, filtroTipoLugar));
-    }
+      result = result.filter((c) => cumpleFiltroPoblacion(c, filtroPoblacion));
+      result = result.filter((c) => cumpleFiltroTipoLugar(c, filtroTipoLugar));
+      return result;
+    },
+    [centroActivoId, textoBusqueda, filtroPoblacion, filtroTipoLugar],
+  );
 
-    return list;
-  }, [centros, textoBusqueda, centroActivoId, filtroPoblacion, filtroTipoLugar]);
+  const centrosMapaFiltrados = useMemo(
+    () => aplicarFiltrosLista(centrosActivos),
+    [aplicarFiltrosLista, centrosActivos],
+  );
+
+  const centrosFiltrados = useMemo(() => {
+    const base = vistaCentros === "historial" ? centrosHistorial : centrosActivos;
+    return aplicarFiltrosLista(base);
+  }, [aplicarFiltrosLista, vistaCentros, centrosHistorial, centrosActivos]);
 
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
@@ -274,10 +302,10 @@ export default function HomeApp() {
 
   const donacionesActivas = useMemo(
     () =>
-      centros.filter(
+      centrosActivos.filter(
         (c) => c.tipo_lugar === "donacion" && donacionVigente(c),
       ).length,
-    [centros],
+    [centrosActivos],
   );
 
   const iniciarDonacion = useCallback(() => {
@@ -287,10 +315,10 @@ export default function HomeApp() {
 
   const urgentes = useMemo(
     () =>
-      centros.filter((c) =>
+      centrosActivos.filter((c) =>
         (c.necesidades ?? []).some((n) => n.urgencia === "alta"),
       ).length,
-    [centros],
+    [centrosActivos],
   );
 
   const onRegistrarCentro = useCallback(async (centro: NuevoCentroAcopio): Promise<CentroAcopio> => {
@@ -408,7 +436,7 @@ export default function HomeApp() {
               </button>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-              <span>{centros.length} activos</span>
+              <span>{centrosActivos.length} activos</span>
               {urgentes > 0 && (
                 <span className="font-semibold text-red-400">{urgentes} urgentes</span>
               )}
@@ -441,8 +469,11 @@ export default function HomeApp() {
             {desktopPanel === "centros" && (
               <CentrosList
                 fillHeight
-                centros={centros}
+                centros={centrosActivos}
                 centrosFiltrados={centrosFiltrados}
+                vistaCentros={vistaCentros}
+                onVistaCentrosChange={setVistaCentros}
+                totalHistorial={centrosHistorial.length}
                 centroActivoId={centroActivoId}
                 onSeleccionarCentro={setCentroActivoId}
                 onQueryChange={setTextoBusqueda}
@@ -459,7 +490,7 @@ export default function HomeApp() {
             {desktopPanel === "reportar" && (
               <ReportarForm
                 compact
-                centros={centros}
+                centros={centrosActivos}
                 form={necesidadForm}
                 onFormChange={setNecesidadForm}
                 onSubmit={agregarNecesidad}
@@ -495,7 +526,7 @@ export default function HomeApp() {
               </h1>
             </div>
             <div className="text-right text-xs text-slate-400">
-              <p>{centros.length} centros</p>
+              <p>{centrosActivos.length} centros</p>
               {urgentes > 0 && <p className="font-bold text-red-400">{urgentes} urgentes</p>}
               <div className="mt-1 flex justify-end">
                 <PresenceStats />
@@ -517,7 +548,7 @@ export default function HomeApp() {
       {!isDesktop && tab === "mapa" && (
         <div className="shrink-0 space-y-2 border-b border-slate-800 bg-slate-900 px-3 py-2">
           <CentroBuscador
-            centros={centros}
+            centros={centrosActivos}
             activoId={centroActivoId}
             onSeleccionar={setCentroActivoId}
             placeholder="Buscar lugar…"
@@ -536,7 +567,7 @@ export default function HomeApp() {
         >
           <Map
             active={mapActive}
-            centros={centrosFiltrados}
+            centros={centrosMapaFiltrados}
             centroActivoId={centroActivoId}
             onReportarCentro={abrirReporteCentro}
             onVerCentroLista={verCentroEnLista}
@@ -560,8 +591,11 @@ export default function HomeApp() {
           <div className="absolute inset-0 z-10 flex flex-col bg-slate-900">
             <CentrosList
               compact
-              centros={centros}
+              centros={centrosActivos}
               centrosFiltrados={centrosFiltrados}
+              vistaCentros={vistaCentros}
+              onVistaCentrosChange={setVistaCentros}
+              totalHistorial={centrosHistorial.length}
               centroActivoId={centroActivoId}
               onSeleccionarCentro={setCentroActivoId}
               onQueryChange={setTextoBusqueda}
@@ -586,7 +620,7 @@ export default function HomeApp() {
           <div className="absolute inset-0 z-10 h-full bg-slate-900">
             <ReportarForm
               compact
-              centros={centros}
+              centros={centrosActivos}
               form={necesidadForm}
               onFormChange={setNecesidadForm}
               onSubmit={agregarNecesidad}
@@ -603,7 +637,7 @@ export default function HomeApp() {
         {!isDesktop && tab === "donaciones" && (
           <div className="absolute inset-0 z-10 flex flex-col bg-slate-900">
             <DonacionesTab
-              centros={centros}
+              centros={centrosActivos}
               onAgregarDonacion={iniciarDonacion}
               onVerEnMapa={(centroId) => {
                 setCentroActivoId(centroId);

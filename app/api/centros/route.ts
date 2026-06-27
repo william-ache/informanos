@@ -13,6 +13,10 @@ import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesid
 import { cargarPropuestasActivas } from "@/lib/propuesta-tipo-server";
 import { cargarPropuestasNecesidadActivas } from "@/lib/propuesta-necesidad-server";
 import {
+  cargarPropuestasFinalizarActivas,
+  cargarPropuestasReactivarActivas,
+} from "@/lib/propuesta-operativo-server";
+import {
   mensajeChatNuevoLugar,
   parseDonacionLimite,
   parseTipoLugar,
@@ -46,6 +50,8 @@ export async function GET() {
     }
 
     const propuestasPorCentro = await cargarPropuestasActivas();
+    const propuestasFinalizar = await cargarPropuestasFinalizarActivas();
+    const propuestasReactivar = await cargarPropuestasReactivarActivas();
     const { porNecesidad, nuevas: propuestasNuevas } =
       await cargarPropuestasNecesidadActivas();
 
@@ -67,6 +73,8 @@ export async function GET() {
         necesidades,
         propuestasPorCentro.get(row.id) ?? null,
         propuestasNuevasPorCentro.get(row.id) ?? [],
+        propuestasFinalizar.get(row.id) ?? null,
+        propuestasReactivar.get(row.id) ?? null,
       );
     });
 

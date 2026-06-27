@@ -23,6 +23,7 @@ export type VerificarAccion = "confirmar_disponible" | "reportar_agotado";
 export type TipoLugar = "acopio" | "urgencia" | "donacion" | "peligro";
 export type TipoLugarVotable = TipoLugar;
 export type VotoPropuestaTipo = "si" | "no";
+export type EstadoOperativoCentro = "activo" | "finalizado";
 export type AccionPropuestaNecesidad = "editar" | "agregar" | "eliminar";
 
 export interface Necesidad {
@@ -72,9 +73,24 @@ export interface CentroAcopio {
   donacion_destino: string | null;
   donacion_transporte: boolean | null;
   creado_en: string;
+  estado_operativo: EstadoOperativoCentro;
+  finalizado_en: string | null;
   necesidades?: Necesidad[];
   propuesta_tipo?: PropuestaTipoLugar | null;
   propuestas_necesidad_nuevas?: PropuestaNecesidad[];
+  propuesta_finalizar?: PropuestaOperativoCentro | null;
+  propuesta_reactivar?: PropuestaOperativoCentro | null;
+}
+
+export interface PropuestaOperativoCentro {
+  id: string;
+  centro_id: string;
+  estado: "activa" | "aprobada" | "rechazada";
+  expira_en: string;
+  creado_en: string;
+  votos_si: number;
+  votos_no: number;
+  votantes: number;
 }
 
 export interface PropuestaTipoLugar {

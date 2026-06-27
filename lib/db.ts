@@ -194,6 +194,79 @@ export async function ensureSchema(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
 
+      const operativoAlters = [
+        `ALTER TABLE centros_acopio ADD COLUMN estado_operativo ENUM('activo', 'finalizado') NOT NULL DEFAULT 'activo' AFTER donacion_transporte`,
+        `ALTER TABLE centros_acopio ADD COLUMN finalizado_en DATETIME NULL AFTER estado_operativo`,
+      ];
+      for (const sql of operativoAlters) {
+        try {
+          await pool.query(sql);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (!message.includes("Duplicate column")) throw error;
+        }
+      }
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS propuestas_finalizar (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          centro_id VARCHAR(36) NOT NULL,
+          estado ENUM('activa', 'aprobada', 'rechazada') NOT NULL DEFAULT 'activa',
+          expira_en DATETIME NOT NULL,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_prop_fin_centro (centro_id),
+          INDEX idx_prop_fin_estado (estado, expira_en),
+          CONSTRAINT fk_prop_fin_centro
+            FOREIGN KEY (centro_id) REFERENCES centros_acopio (id)
+            ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS votos_propuesta_finalizar (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          propuesta_id VARCHAR(36) NOT NULL,
+          voto ENUM('si', 'no') NOT NULL,
+          ip_hash VARCHAR(64) NOT NULL,
+          peso INT NOT NULL DEFAULT 1,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_voto_prop_fin_ip (propuesta_id, ip_hash),
+          CONSTRAINT fk_voto_prop_fin
+            FOREIGN KEY (propuesta_id) REFERENCES propuestas_finalizar (id)
+            ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS propuestas_reactivar (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          centro_id VARCHAR(36) NOT NULL,
+          estado ENUM('activa', 'aprobada', 'rechazada') NOT NULL DEFAULT 'activa',
+          expira_en DATETIME NOT NULL,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_prop_rea_centro (centro_id),
+          INDEX idx_prop_rea_estado (estado, expira_en),
+          CONSTRAINT fk_prop_rea_centro
+            FOREIGN KEY (centro_id) REFERENCES centros_acopio (id)
+            ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS votos_propuesta_reactivar (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          propuesta_id VARCHAR(36) NOT NULL,
+          voto ENUM('si', 'no') NOT NULL,
+          ip_hash VARCHAR(64) NOT NULL,
+          peso INT NOT NULL DEFAULT 1,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_voto_prop_rea_ip (propuesta_id, ip_hash),
+          CONSTRAINT fk_voto_prop_rea
+            FOREIGN KEY (propuesta_id) REFERENCES propuestas_reactivar (id)
+            ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

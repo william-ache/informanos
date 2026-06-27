@@ -1,6 +1,13 @@
 import type { RowDataPacket } from "mysql2";
 import { parseTipoLugar } from "@/lib/tipo-lugar";
-import type { CentroAcopio, Necesidad, PropuestaNecesidad, PropuestaTipoLugar } from "@/types/database";
+import type {
+  CentroAcopio,
+  EstadoOperativoCentro,
+  Necesidad,
+  PropuestaNecesidad,
+  PropuestaOperativoCentro,
+  PropuestaTipoLugar,
+} from "@/types/database";
 
 export interface CentroRow extends RowDataPacket {
   id: string;
@@ -19,19 +26,23 @@ export interface CentroRow extends RowDataPacket {
   donacion_necesita: string | null;
   donacion_destino: string | null;
   donacion_transporte: number | null;
+  estado_operativo: string | null;
+  finalizado_en: string | null;
   creado_en: string;
 }
 
 export const CENTRO_SELECT = `id, nombre, municipio, direccion, latitud, longitud, contacto,
   aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales,
   tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte,
-  creado_en`;
+  estado_operativo, finalizado_en, creado_en`;
 
 export function mapCentro(
   row: CentroRow,
   necesidades: Necesidad[] = [],
   propuesta_tipo: PropuestaTipoLugar | null = null,
   propuestas_necesidad_nuevas: PropuestaNecesidad[] = [],
+  propuesta_finalizar: PropuestaOperativoCentro | null = null,
+  propuesta_reactivar: PropuestaOperativoCentro | null = null,
 ): CentroAcopio {
   return {
     id: row.id,
@@ -54,9 +65,15 @@ export function mapCentro(
     donacion_destino: row.donacion_destino,
     donacion_transporte:
       row.donacion_transporte === null ? null : Boolean(row.donacion_transporte),
+    estado_operativo: (row.estado_operativo === "finalizado"
+      ? "finalizado"
+      : "activo") as EstadoOperativoCentro,
+    finalizado_en: row.finalizado_en,
     creado_en: row.creado_en,
     necesidades,
     propuesta_tipo,
     propuestas_necesidad_nuevas,
+    propuesta_finalizar,
+    propuesta_reactivar,
   };
 }

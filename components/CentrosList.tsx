@@ -2,6 +2,10 @@
 
 import dynamic from "next/dynamic";
 import type { CentroAcopio } from "@/types/database";
+import {
+  formatoCuentaRegresivaLarga,
+  segundosRestantesHistorial,
+} from "@/lib/centro-operativo";
 import type { FiltroPoblacion as FiltroPoblacionState } from "@/lib/poblacion";
 import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
 import type { FiltroTipoLugar } from "@/lib/tipo-lugar";
@@ -32,11 +36,21 @@ const CentroVotoTipo = dynamic(() => import("@/components/CentroVotoTipo"), {
   ssr: false,
 });
 
+const CentroVotoOperativo = dynamic(
+  () => import("@/components/CentroVotoOperativo"),
+  { ssr: false },
+);
+
+import type { VistaCentros } from "@/lib/centro-operativo";
+
 interface CentrosListProps {
   compact?: boolean;
   fillHeight?: boolean;
   centros: CentroAcopio[];
   centrosFiltrados: CentroAcopio[];
+  vistaCentros?: VistaCentros;
+  onVistaCentrosChange?: (vista: VistaCentros) => void;
+  totalHistorial?: number;
   centroActivoId: string | null;
   onSeleccionarCentro: (id: string | null) => void;
   onQueryChange: (query: string) => void;
@@ -54,6 +68,9 @@ export default function CentrosList({
   fillHeight = false,
   centros,
   centrosFiltrados,
+  vistaCentros = "activos",
+  onVistaCentrosChange,
+  totalHistorial = 0,
   centroActivoId,
   onSeleccionarCentro,
   onQueryChange,
@@ -65,6 +82,7 @@ export default function CentrosList({
   errorMsg,
   onReportarCentro,
 }: CentrosListProps) {
+  const esHistorial = vistaCentros === "historial";
   const filtersWrap = compact
     ? "space-y-3 px-4 pt-3"
     : fillHeight
@@ -89,6 +107,32 @@ export default function CentrosList({
         />
         <FiltroPoblacion value={filtroPoblacion} onChange={onFiltroPoblacionChange} />
         <FiltroTipoLugar value={filtroTipoLugar} onChange={onFiltroTipoLugarChange} />
+        {onVistaCentrosChange && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onVistaCentrosChange("activos")}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${
+                !esHistorial
+                  ? "bg-red-600 text-white"
+                  : "border border-slate-700 text-slate-400"
+              }`}
+            >
+              Activos
+            </button>
+            <button
+              type="button"
+              onClick={() => onVistaCentrosChange("historial")}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${
+                esHistorial
+                  ? "bg-slate-600 text-white"
+                  : "border border-slate-700 text-slate-400"
+              }`}
+            >
+              Historial{totalHistorial > 0 ? ` (${totalHistorial})` : ""}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className={listWrap}>
@@ -99,7 +143,11 @@ export default function CentrosList({
           </p>
         )}
         {!isLoading && centrosFiltrados.length === 0 && (
-          <p className="text-sm text-slate-400">No hay centros en este filtro.</p>
+          <p className="text-sm text-slate-400">
+            {esHistorial
+              ? "No hay lugares en historial (24 h tras finalizar)."
+              : "No hay centros en este filtro."}
+          </p>
         )}
 
         <ul className="space-y-3 pb-4">
@@ -133,6 +181,14 @@ export default function CentrosList({
                     </span>
                     <p className="font-semibold leading-snug">{centro.nombre}</p>
                     <p className="text-sm text-slate-400">{centro.municipio}</p>
+                    {esHistorial && centro.finalizado_en && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Finalizado · historial ⏱{" "}
+                        {formatoCuentaRegresivaLarga(
+                          segundosRestantesHistorial(centro.finalizado_en),
+                        )}
+                      </p>
+                    )}
                     {tienePoblacion(centro) && (
                       <p className="mt-1 text-xs text-slate-500">
                         👥 {resumenPoblacion(centro)}
@@ -182,7 +238,8 @@ export default function CentrosList({
                     )}
                     {(centro.tipo_lugar === "acopio" ||
                       centro.tipo_lugar === "urgencia" ||
-                      !centro.tipo_lugar) && (
+                      !centro.tipo_lugar) &&
+                      !esHistorial && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -198,7 +255,15 @@ export default function CentrosList({
                       className="mt-3 border-t border-slate-800 pt-3"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <CentroVotoTipo centro={centro} />
+                      {!esHistorial && <CentroVotoTipo centro={centro} />}
+                      {!esHistorial && (
+                        <div className="mt-2">
+                          <CentroVotoOperativo centro={centro} modo="finalizar" />
+                        </div>
+                      )}
+                      {esHistorial && (
+                        <CentroVotoOperativo centro={centro} modo="reactivar" />
+                      )}
                     </div>
                   </div>
                 </div>
