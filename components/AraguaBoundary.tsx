@@ -10,8 +10,7 @@ export default function AraguaBoundary() {
       pathOptions={{
         color: "#dc2626",
         weight: 2.5,
-        fillColor: "#ef4444",
-        fillOpacity: 0.15,
+        fillOpacity: 0,
         dashArray: "10 6",
         interactive: false,
       }}
