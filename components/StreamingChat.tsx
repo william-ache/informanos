@@ -30,6 +30,7 @@ export default function StreamingChat({
   hideHeader = false,
 }: StreamingChatProps) {
   const [autor, setAutor] = useState("");
+  const [nombrePersistido, setNombrePersistido] = useState(false);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -47,11 +48,14 @@ export default function StreamingChat({
   );
 
   const mensajes = data?.mensajes ?? [];
-  const nombreGuardado = autor.trim().length > 0 && !editandoNombre;
+  const nombreGuardado = nombrePersistido && !editandoNombre;
 
   useEffect(() => {
     const guardado = obtenerChatAutor();
-    if (guardado) setAutor(guardado);
+    if (guardado) {
+      setAutor(guardado);
+      setNombrePersistido(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -68,6 +72,7 @@ export default function StreamingChat({
     setEnviando(true);
     setError(null);
     guardarChatAutor(nombre);
+    setNombrePersistido(true);
     setEditandoNombre(false);
 
     let latitud: number | null = null;
@@ -160,7 +165,7 @@ export default function StreamingChat({
       </div>
 
       <form onSubmit={enviarMensaje} className="border-t border-slate-800 bg-slate-950 p-3 pb-safe">
-        {nombreGuardado ? (
+        {nombreGuardado && (
           <div className="mb-2 flex items-center justify-between gap-2 text-sm text-slate-400">
             <span>
               Como <strong className="text-slate-200">{autor}</strong>
@@ -173,7 +178,9 @@ export default function StreamingChat({
               Cambiar
             </button>
           </div>
-        ) : (
+        )}
+
+        {!nombreGuardado && !editandoNombre && (
           <input
             required
             type="text"
@@ -184,15 +191,32 @@ export default function StreamingChat({
           />
         )}
 
-        {editandoNombre && nombreGuardado && (
+        {editandoNombre && (
           <div className="mb-2 flex gap-2">
             <input
               autoFocus
               type="text"
+              placeholder="Tu nombre"
               value={autor}
               onChange={(e) => setAutor(e.target.value)}
               className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-amber-500"
             />
+            <button
+              type="button"
+              onClick={() => {
+                const nombre = autor.trim();
+                if (nombre) {
+                  guardarChatAutor(nombre);
+                  setNombrePersistido(true);
+                } else {
+                  setAutor(obtenerChatAutor());
+                }
+                setEditandoNombre(false);
+              }}
+              className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-amber-400"
+            >
+              Listo
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -201,13 +225,14 @@ export default function StreamingChat({
               }}
               className="rounded-xl border border-slate-700 px-3 py-2 text-xs"
             >
-              OK
+              Cancelar
             </button>
             <button
               type="button"
               onClick={() => {
                 limpiarChatAutor();
                 setAutor("");
+                setNombrePersistido(false);
                 setEditandoNombre(false);
               }}
               className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-red-400"
