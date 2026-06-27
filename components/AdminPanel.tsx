@@ -10,6 +10,7 @@ import {
   obtenerAdminToken,
 } from "@/lib/admin-client";
 import { formatFechaHumana } from "@/lib/formatFecha";
+import { etiquetaTipoReporte } from "@/lib/reporte-etiquetas";
 import type { CentroAcopio, ChatMensaje, Necesidad, ReporteError, UrgenciaNivel } from "@/types/database";
 
 type AdminTab = "lugares" | "necesidades" | "chat" | "reportes";
@@ -48,6 +49,7 @@ export default function AdminPanel({
   const [editandoChatId, setEditandoChatId] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<ChatMensaje[]>([]);
   const [reportes, setReportes] = useState<ReporteError[]>([]);
+  const [cargandoReportes, setCargandoReportes] = useState(false);
   const [cargando, setCargando] = useState(false);
 
   const [formCentro, setFormCentro] = useState({
@@ -123,10 +125,20 @@ export default function AdminPanel({
   }, []);
 
   const cargarReportes = useCallback(async () => {
-    const res = await adminFetch("/api/admin/reportes");
-    if (!res.ok) return;
-    const body = (await res.json()) as { reportes?: ReporteError[] };
-    setReportes(body.reportes ?? []);
+    setCargandoReportes(true);
+    try {
+      const res = await adminFetch("/api/admin/reportes");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "No se pudieron cargar los reportes.");
+      }
+      const body = (await res.json()) as { reportes?: ReporteError[] };
+      setReportes(body.reportes ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar reportes.");
+    } finally {
+      setCargandoReportes(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -138,8 +150,8 @@ export default function AdminPanel({
 
   useEffect(() => {
     if (!open || !autenticado) return;
+    void cargarReportes();
     if (tab === "chat") void cargarChat();
-    if (tab === "reportes") void cargarReportes();
   }, [open, autenticado, tab, cargarChat, cargarReportes]);
 
   const lugaresFiltrados = useMemo(() => {
@@ -183,6 +195,7 @@ export default function AdminPanel({
       guardarAdminToken(clave.trim());
       setAutenticado(true);
       setClave("");
+      setTab("reportes");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al entrar.");
     } finally {
@@ -475,13 +488,18 @@ export default function AdminPanel({
                     key={item.id}
                     type="button"
                     onClick={() => setTab(item.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                    className={`relative shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold ${
                       tab === item.id
                         ? "bg-violet-600 text-white"
                         : "text-slate-400 hover:bg-slate-800"
                     }`}
                   >
                     {item.label}
+                    {item.id === "reportes" && reportes.length > 0 && (
+                      <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-slate-950">
+                        {reportes.length > 99 ? "99+" : reportes.length}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -789,7 +807,23 @@ export default function AdminPanel({
 
                 {tab === "reportes" && (
                   <div className="space-y-3">
-                    {reportes.length === 0 && (
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm text-slate-400">
+                        Reportes de usuarios (lugares, errores, info falsa…)
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void cargarReportes()}
+                        disabled={cargandoReportes}
+                        className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 disabled:opacity-50"
+                      >
+                        {cargandoReportes ? "…" : "Actualizar"}
+                      </button>
+                    </div>
+                    {cargandoReportes && reportes.length === 0 && (
+                      <p className="text-sm text-slate-500">Cargando reportes…</p>
+                    )}
+                    {!cargandoReportes && reportes.length === 0 && (
                       <p className="text-sm text-slate-500">Sin reportes.</p>
                     )}
                     {reportes.map((reporte) => (
@@ -798,12 +832,21 @@ export default function AdminPanel({
                         className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
                       >
                         <p className="text-xs font-semibold uppercase text-amber-400">
-                          {reporte.tipo}
+                          {etiquetaTipoReporte(reporte.tipo)}
                         </p>
+                        {reporte.centro_id && (
+                          <p className="mt-1 text-sm font-medium text-violet-300">
+                            📍 {reporte.centro_nombre ?? "Lugar eliminado"}
+                            {reporte.centro_municipio
+                              ? ` · ${reporte.centro_municipio}`
+                              : ""}
+                          </p>
+                        )}
                         <p className="mt-1 text-sm text-slate-300">{reporte.descripcion}</p>
                         <p className="mt-1 text-xs text-slate-500">
                           {formatFechaHumana(reporte.creado_en)}
                           {reporte.contacto ? ` · ${reporte.contacto}` : ""}
+                          {reporte.pagina ? ` · ${reporte.pagina}` : ""}
                         </p>
                         <button
                           type="button"

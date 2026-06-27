@@ -153,6 +153,7 @@ export default function HomeApp() {
   );
   const [vistaCentros, setVistaCentros] = useState<VistaCentros>("activos");
   const [mapUiModal, setMapUiModal] = useState(false);
+  const [solicitudAgregarCentro, setSolicitudAgregarCentro] = useState(0);
   const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
   const [instalarAppOpen, setInstalarAppOpen] = useState(false);
   const pageVisible = usePageVisible();
@@ -576,7 +577,8 @@ export default function HomeApp() {
             tipoLugarInicial={tipoLugarInicial}
             onTipoLugarInicialConsumido={() => setTipoLugarInicial(null)}
             hideAgregarButton={!isDesktop}
-            agregarEnCentro={!isDesktop && tab === "mapa"}
+            trackMapCenter={!isDesktop && tab === "mapa"}
+            solicitudAgregarCentro={solicitudAgregarCentro}
             agregarMenuOpen={agregarMenuOpen}
             onAgregarMenuChange={setAgregarMenuOpen}
             onUiModalChange={setMapUiModal}
@@ -693,14 +695,27 @@ export default function HomeApp() {
                   : 0;
 
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTab(item.id)}
-                className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition active:scale-95 ${
-                  active ? "text-red-400" : "text-slate-500"
-                }`}
-              >
+              <div key={item.id} className="relative flex flex-1">
+                {item.id === "reportar" && tab === "mapa" && !flotantesOcultos && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSolicitudAgregarCentro((n) => n + 1);
+                    }}
+                    className="absolute bottom-[calc(100%+0.35rem)] left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold leading-none text-white shadow-lg active:scale-95"
+                    aria-label="Agregar lugar en el centro del mapa"
+                  >
+                    +
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setTab(item.id)}
+                  className={`relative flex w-full flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition active:scale-95 ${
+                    active ? "text-red-400" : "text-slate-500"
+                  }`}
+                >
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
                     active ? "bg-red-600 text-white" : "bg-slate-800 text-slate-400"
@@ -719,6 +734,7 @@ export default function HomeApp() {
                   </span>
                 )}
               </button>
+              </div>
             );
           })}
         </nav>

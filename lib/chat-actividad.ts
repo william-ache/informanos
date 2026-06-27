@@ -3,6 +3,9 @@ import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 
 import { AUTOR_SISTEMA } from "@/lib/chat-sistema-constants";
+import { ETIQUETA_TIPO_REPORTE } from "@/lib/reporte-etiquetas";
+
+export { ETIQUETA_TIPO_REPORTE };
 
 export async function publicarEnChat(
   mensaje: string,
@@ -28,11 +31,3 @@ export async function obtenerNombreCentro(
   const nombre = rows[0]?.nombre;
   return typeof nombre === "string" ? nombre : null;
 }
-
-export const ETIQUETA_TIPO_REPORTE: Record<string, string> = {
-  ubicacion_incorrecta: "Ubicación incorrecta",
-  info_falsa: "Información falsa",
-  info_erronea: "Información errónea",
-  error_sistema: "Error del sistema",
-  otro: "Otro",
-};

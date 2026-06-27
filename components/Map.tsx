@@ -68,7 +68,8 @@ interface MapProps {
   className?: string;
   active?: boolean;
   hideAgregarButton?: boolean;
-  agregarEnCentro?: boolean;
+  trackMapCenter?: boolean;
+  solicitudAgregarCentro?: number;
   agregarMenuOpen?: boolean;
   onAgregarMenuChange?: (open: boolean) => void;
   onUiModalChange?: (open: boolean) => void;
@@ -165,7 +166,8 @@ function MapView({
   className = "",
   active = true,
   hideAgregarButton = false,
-  agregarEnCentro = false,
+  trackMapCenter = false,
+  solicitudAgregarCentro = 0,
   agregarMenuOpen,
   onAgregarMenuChange,
   onUiModalChange,
@@ -239,6 +241,12 @@ function MapView({
   function handleMapClick(lat: number, lng: number) {
     void abrirFormulario(lat, lng);
   }
+
+  useEffect(() => {
+    if (!solicitudAgregarCentro || !trackMapCenter || !active) return;
+    const { lat, lng } = centroMapaRef.current;
+    void abrirFormulario(lat, lng);
+  }, [solicitudAgregarCentro, trackMapCenter, active]);
 
   function cerrarModal() {
     setModalAbierto(false);
@@ -360,7 +368,7 @@ function MapView({
           <MapFlyTo lat={centroActivo.latitud} lng={centroActivo.longitud} />
         )}
         <MapClickHandler active={seleccionMapa} onMapClick={handleMapClick} />
-        {agregarEnCentro && active && (
+        {trackMapCenter && active && (
           <MapCenterTracker active onCenterChange={onCentroMapaChange} />
         )}
         <CentroMarkers
@@ -383,34 +391,7 @@ function MapView({
         </div>
       )}
 
-      {agregarEnCentro && active && !hayModalMapa && (
-        <>
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 z-[999] -translate-x-1/2"
-            style={{ marginTop: "-13px" }}
-          >
-            <div
-              className="centro-marker-pin shadow-md"
-              style={{ backgroundColor: "#2563eb" }}
-            />
-          </div>
-          <div className="pointer-events-none absolute left-1/2 top-1/2 z-[1000] -translate-x-1/2 -translate-y-[calc(100%+2.75rem)]">
-            <button
-              type="button"
-              onClick={() => {
-                const { lat, lng } = centroMapaRef.current;
-                void abrirFormulario(lat, lng);
-              }}
-              className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold leading-none text-white shadow-lg active:scale-95"
-              aria-label="Agregar lugar aquí"
-            >
-              +
-            </button>
-          </div>
-        </>
-      )}
-
-      {!hideAgregarButton && !agregarEnCentro && (
+      {!hideAgregarButton && !trackMapCenter && (
         <button
           type="button"
           onClick={() => {

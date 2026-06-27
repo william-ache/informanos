@@ -12,6 +12,8 @@ export interface ReporteError {
   tipo: TipoReporteError;
   descripcion: string;
   centro_id: string | null;
+  centro_nombre: string | null;
+  centro_municipio: string | null;
   contacto: string | null;
   pagina: string | null;
   creado_en: string;
