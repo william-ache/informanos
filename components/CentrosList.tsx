@@ -23,6 +23,10 @@ const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
   ssr: false,
 });
 
+const CentroVotoTipo = dynamic(() => import("@/components/CentroVotoTipo"), {
+  ssr: false,
+});
+
 interface CentrosListProps {
   compact?: boolean;
   fillHeight?: boolean;
@@ -166,6 +170,12 @@ export default function CentrosList({
                       + Reportar necesidad
                     </button>
                     )}
+                    <div
+                      className="mt-3 border-t border-slate-800 pt-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CentroVotoTipo centro={centro} />
+                    </div>
                   </div>
                 </div>
               </li>

@@ -23,9 +23,9 @@ export function iconoCentro(tipo: TipoLugar): L.DivIcon {
   const icon = L.divIcon({
     className: "centro-marker-wrap",
     html: `<div class="centro-marker-pin" style="background:${color}"></div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 22],
-    popupAnchor: [0, -22],
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -30],
   });
 
   iconCache.set(tipo, icon);

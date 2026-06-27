@@ -10,6 +10,7 @@ import {
   type CentroRow,
 } from "@/lib/centro-map";
 import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
+import { cargarPropuestasActivas } from "@/lib/propuesta-tipo-server";
 import {
   mensajeChatNuevoLugar,
   parseDonacionLimite,
@@ -43,8 +44,14 @@ export async function GET() {
       necesidadesPorCentro.set(row.centro_id, lista);
     }
 
+    const propuestasPorCentro = await cargarPropuestasActivas();
+
     const centros = centrosRows.map((row) =>
-      mapCentro(row, necesidadesPorCentro.get(row.id) ?? []),
+      mapCentro(
+        row,
+        necesidadesPorCentro.get(row.id) ?? [],
+        propuestasPorCentro.get(row.id) ?? null,
+      ),
     );
 
     return NextResponse.json({ centros });

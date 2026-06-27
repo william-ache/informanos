@@ -32,6 +32,34 @@ CREATE TABLE IF NOT EXISTS centros_acopio (
   creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS propuestas_tipo_lugar (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  centro_id VARCHAR(36) NOT NULL,
+  tipo_propuesto ENUM('donacion', 'urgencia', 'peligro') NOT NULL,
+  estado ENUM('activa', 'aprobada', 'rechazada') NOT NULL DEFAULT 'activa',
+  expira_en DATETIME NOT NULL,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_propuesta_centro (centro_id),
+  INDEX idx_propuesta_estado_expira (estado, expira_en),
+  CONSTRAINT fk_propuesta_centro
+    FOREIGN KEY (centro_id) REFERENCES centros_acopio (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS votos_propuesta_tipo (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  propuesta_id VARCHAR(36) NOT NULL,
+  voto ENUM('si', 'no') NOT NULL,
+  ip_hash VARCHAR(64) NOT NULL,
+  peso INT NOT NULL DEFAULT 1,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_voto_propuesta_ip (propuesta_id, ip_hash),
+  INDEX idx_votos_propuesta (propuesta_id),
+  CONSTRAINT fk_voto_propuesta
+    FOREIGN KEY (propuesta_id) REFERENCES propuestas_tipo_lugar (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS necesidades (
   id                  VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),
   centro_id           VARCHAR(36)  NOT NULL,

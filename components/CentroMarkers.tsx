@@ -12,6 +12,7 @@ import {
   etiquetaTipoLugar,
 } from "@/lib/tipo-lugar";
 import type { CentroAcopio } from "@/types/database";
+import CentroVotoTipo from "@/components/CentroVotoTipo";
 
 function urgenciaClass(urgencia: string) {
   if (urgencia === "alta") return "font-semibold text-red-600";
@@ -152,6 +153,10 @@ function CentroMarkerItem({
             )}
           </div>
           )}
+
+          <div className="centro-popup-scroll mt-2 border-t border-slate-200 pt-2">
+            <CentroVotoTipo centro={centro} compact />
+          </div>
 
           <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
             <div className="grid grid-cols-2 gap-1.5">

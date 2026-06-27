@@ -1,6 +1,6 @@
 import type { RowDataPacket } from "mysql2";
 import { parseTipoLugar } from "@/lib/tipo-lugar";
-import type { CentroAcopio, Necesidad } from "@/types/database";
+import type { CentroAcopio, Necesidad, PropuestaTipoLugar } from "@/types/database";
 
 export interface CentroRow extends RowDataPacket {
   id: string;
@@ -27,7 +27,11 @@ export const CENTRO_SELECT = `id, nombre, municipio, direccion, latitud, longitu
   tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte,
   creado_en`;
 
-export function mapCentro(row: CentroRow, necesidades: Necesidad[] = []): CentroAcopio {
+export function mapCentro(
+  row: CentroRow,
+  necesidades: Necesidad[] = [],
+  propuesta_tipo: PropuestaTipoLugar | null = null,
+): CentroAcopio {
   return {
     id: row.id,
     nombre: row.nombre,
@@ -51,5 +55,6 @@ export function mapCentro(row: CentroRow, necesidades: Necesidad[] = []): Centro
       row.donacion_transporte === null ? null : Boolean(row.donacion_transporte),
     creado_en: row.creado_en,
     necesidades,
+    propuesta_tipo,
   };
 }
