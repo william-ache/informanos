@@ -106,7 +106,7 @@ pm2 start ecosystem.config.js
 pm2 save
 ```
 
-Configura nginx como reverse proxy al puerto 3000. Ver `deploy/nginx.conf.example`.
+Configura nginx como reverse proxy al puerto **3010** (el 3000 ya está ocupado en el VPS). Ver `deploy/nginx.conf.example` para `informanos.lat`.
 
 ## Licencia
 
