@@ -6,6 +6,11 @@ import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import {
+  elementoDesdeInsumo,
+  INSUMO_OPCIONES,
+  insumoValido,
+} from "@/lib/insumos";
+import {
   cumpleFiltroPoblacion,
   filtroPoblacionVacio,
   resumenPoblacion,
@@ -75,7 +80,8 @@ const tabs: { id: Tab; label: string; short: string }[] = [
 
 const emptyNecesidad = {
   centro_id: "",
-  elemento: "",
+  tipo_insumo: "",
+  elemento_otro: "",
   cantidad_solicitada: "",
   urgencia: "media" as UrgenciaNivel,
 };
@@ -196,10 +202,24 @@ export default function HomeApp() {
     setAccionError(null);
 
     try {
+      const elemento = elementoDesdeInsumo(
+        necesidadForm.tipo_insumo,
+        necesidadForm.elemento_otro,
+      );
+
+      if (!insumoValido(necesidadForm.tipo_insumo, necesidadForm.elemento_otro)) {
+        throw new Error("Selecciona un insumo o describe el tipo «Otro».");
+      }
+
       const res = await fetch("/api/necesidades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(necesidadForm),
+        body: JSON.stringify({
+          centro_id: necesidadForm.centro_id,
+          elemento,
+          cantidad_solicitada: necesidadForm.cantidad_solicitada,
+          urgencia: necesidadForm.urgencia,
+        }),
       });
 
       if (!res.ok) {
@@ -346,16 +366,41 @@ export default function HomeApp() {
           }))}
         />
 
-        <input
+        <SearchableSelect
           required
-          type="text"
-          placeholder="Insumo (ej. Agua, Medicamentos)"
-          value={necesidadForm.elemento}
-          onChange={(e) =>
-            setNecesidadForm((prev) => ({ ...prev, elemento: e.target.value }))
+          value={necesidadForm.tipo_insumo}
+          onChange={(tipo_insumo) =>
+            setNecesidadForm((prev) => ({
+              ...prev,
+              tipo_insumo,
+              elemento_otro: tipo_insumo === "otro" ? prev.elemento_otro : "",
+            }))
           }
-          className={`${inputClass} mb-3`}
+          placeholder="Buscar insumo…"
+          className="mb-3"
+          maxResults={6}
+          options={INSUMO_OPCIONES.map((o) => ({
+            value: o.value,
+            label: o.label,
+            sublabel: "sublabel" in o ? o.sublabel : undefined,
+          }))}
         />
+
+        {necesidadForm.tipo_insumo === "otro" && (
+          <input
+            required
+            type="text"
+            placeholder="Describe la necesidad (ej. Colchones, Gasolina…)"
+            value={necesidadForm.elemento_otro}
+            onChange={(e) =>
+              setNecesidadForm((prev) => ({
+                ...prev,
+                elemento_otro: e.target.value,
+              }))
+            }
+            className={`${inputClass} mb-3`}
+          />
+        )}
 
         <input
           required
@@ -391,7 +436,11 @@ export default function HomeApp() {
 
         <button
           type="submit"
-          disabled={guardandoNecesidad || centros.length === 0}
+          disabled={
+            guardandoNecesidad ||
+            centros.length === 0 ||
+            !insumoValido(necesidadForm.tipo_insumo, necesidadForm.elemento_otro)
+          }
           className="mt-auto w-full rounded-xl bg-red-600 py-4 text-base font-bold text-white active:bg-red-500 disabled:opacity-50"
         >
           {guardandoNecesidad ? "Guardando…" : "Enviar reporte"}
