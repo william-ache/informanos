@@ -4,12 +4,14 @@ export interface FiltroPoblacion {
   minNinos: string;
   minPersonas: string;
   minAncianos: string;
+  minAnimales: string;
 }
 
 export const filtroPoblacionVacio = (): FiltroPoblacion => ({
   minNinos: "",
   minPersonas: "",
   minAncianos: "",
+  minAnimales: "",
 });
 
 function parseMin(valor: string): number {
@@ -21,7 +23,8 @@ export function filtroPoblacionActivo(filtro: FiltroPoblacion): boolean {
   return (
     parseMin(filtro.minNinos) > 0 ||
     parseMin(filtro.minPersonas) > 0 ||
-    parseMin(filtro.minAncianos) > 0
+    parseMin(filtro.minAncianos) > 0 ||
+    parseMin(filtro.minAnimales) > 0
   );
 }
 
@@ -32,16 +35,19 @@ export function cumpleFiltroPoblacion(
   const minN = parseMin(filtro.minNinos);
   const minP = parseMin(filtro.minPersonas);
   const minA = parseMin(filtro.minAncianos);
+  const minAn = parseMin(filtro.minAnimales);
 
-  if (minN === 0 && minP === 0 && minA === 0) return true;
+  if (minN === 0 && minP === 0 && minA === 0 && minAn === 0) return true;
 
   const n = centro.aprox_ninos ?? 0;
   const p = centro.aprox_personas ?? 0;
   const a = centro.aprox_ancianos ?? 0;
+  const an = centro.aprox_animales ?? 0;
 
   if (minN > 0 && n < minN) return false;
   if (minP > 0 && p < minP) return false;
   if (minA > 0 && a < minA) return false;
+  if (minAn > 0 && an < minAn) return false;
   return true;
 }
 
@@ -49,7 +55,8 @@ export function tienePoblacion(centro: CentroAcopio): boolean {
   return (
     (centro.aprox_ninos ?? 0) > 0 ||
     (centro.aprox_personas ?? 0) > 0 ||
-    (centro.aprox_ancianos ?? 0) > 0
+    (centro.aprox_ancianos ?? 0) > 0 ||
+    (centro.aprox_animales ?? 0) > 0
   );
 }
 
@@ -58,9 +65,11 @@ export function resumenPoblacion(centro: CentroAcopio): string {
   const n = centro.aprox_ninos ?? 0;
   const p = centro.aprox_personas ?? 0;
   const a = centro.aprox_ancianos ?? 0;
+  const an = centro.aprox_animales ?? 0;
   if (n > 0) partes.push(`${n} niños`);
   if (p > 0) partes.push(`${p} personas`);
   if (a > 0) partes.push(`${a} ancianos`);
+  if (an > 0) partes.push(`${an} animales`);
   return partes.join(" · ");
 }
 

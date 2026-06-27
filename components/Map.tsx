@@ -30,6 +30,7 @@ interface FormState {
   aproxNinos: string;
   aproxPersonas: string;
   aproxAncianos: string;
+  aproxAnimales: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -40,6 +41,7 @@ const emptyForm = (): FormState => ({
   aproxNinos: "",
   aproxPersonas: "",
   aproxAncianos: "",
+  aproxAnimales: "",
 });
 
 interface MapProps {
@@ -221,6 +223,7 @@ function MapView({
         aprox_ninos: parsePoblacionInput(form.aproxNinos),
         aprox_personas: parsePoblacionInput(form.aproxPersonas),
         aprox_ancianos: parsePoblacionInput(form.aproxAncianos),
+        aprox_animales: parsePoblacionInput(form.aproxAnimales),
       });
       cerrarModal();
       setSeleccionMapa(false);
@@ -388,14 +391,15 @@ function MapView({
               <div className="mt-3">
                 <p className="text-sm font-medium">Personas en el lugar (aprox.)</p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Niños, jóvenes/adultos y ancianos — estimado a ojo.
+                  Niños, personas, ancianos y animales — estimado a ojo.
                 </p>
-                <div className="mt-2 grid grid-cols-3 gap-2">
+                <div className="mt-2 grid grid-cols-4 gap-2">
                   {(
                     [
                       ["aproxNinos", "Niños"],
                       ["aproxPersonas", "Personas"],
                       ["aproxAncianos", "Ancianos"],
+                      ["aproxAnimales", "Animales"],
                     ] as const
                   ).map(([key, label]) => (
                     <label key={key} className="block text-center">

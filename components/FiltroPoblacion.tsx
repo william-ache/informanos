@@ -17,6 +17,7 @@ const campos: {
   { key: "minNinos", label: "Mín. niños", short: "Niños" },
   { key: "minPersonas", label: "Mín. personas", short: "Personas" },
   { key: "minAncianos", label: "Mín. ancianos", short: "Ancianos" },
+  { key: "minAnimales", label: "Mín. animales", short: "Animales" },
 ];
 
 export default function FiltroPoblacion({
@@ -29,14 +30,19 @@ export default function FiltroPoblacion({
   }
 
   function limpiar() {
-    onChange({ minNinos: "", minPersonas: "", minAncianos: "" });
+    onChange({
+      minNinos: "",
+      minPersonas: "",
+      minAncianos: "",
+      minAnimales: "",
+    });
   }
 
   return (
     <div className={className}>
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          Filtrar por personas (aprox.)
+          Filtrar por personas y animales (aprox.)
         </p>
         {filtroPoblacionActivo(value) && (
           <button
@@ -48,7 +54,7 @@ export default function FiltroPoblacion({
           </button>
         )}
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {campos.map(({ key, label, short }) => (
           <label key={key} className="block">
             <span className="mb-1 block text-[10px] text-slate-500">{short}</span>
@@ -60,7 +66,7 @@ export default function FiltroPoblacion({
               aria-label={label}
               value={value[key]}
               onChange={(e) => actualizar(key, e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-center text-sm text-slate-100 outline-none focus:border-red-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-1.5 py-2 text-center text-sm text-slate-100 outline-none focus:border-red-500"
             />
           </label>
         ))}

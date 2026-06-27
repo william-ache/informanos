@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS centros_acopio (
   aprox_ninos INT NULL,
   aprox_personas INT NULL,
   aprox_ancianos INT NULL,
+  aprox_animales INT NULL,
   creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -104,7 +105,7 @@ SET @id_maracay = 'a1000000-0000-4000-8000-000000000001';
 SET @id_turmero  = 'a1000000-0000-4000-8000-000000000002';
 SET @id_limon    = 'a1000000-0000-4000-8000-000000000003';
 
-INSERT INTO centros_acopio (id, nombre, municipio, direccion, latitud, longitud, contacto, aprox_ninos, aprox_personas, aprox_ancianos)
+INSERT INTO centros_acopio (id, nombre, municipio, direccion, latitud, longitud, contacto, aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales)
 VALUES
   (
     @id_maracay,
@@ -116,7 +117,8 @@ VALUES
     '+58 244-555-0101',
     45,
     120,
-    18
+    18,
+    12
   ),
   (
     @id_turmero,
@@ -128,7 +130,8 @@ VALUES
     '+58 244-555-0202',
     30,
     85,
-    22
+    22,
+    8
   ),
   (
     @id_limon,
@@ -140,7 +143,8 @@ VALUES
     '+58 244-555-0303',
     20,
     60,
-    15
+    15,
+    5
   );
 
 INSERT INTO necesidades (centro_id, elemento, cantidad_solicitada, urgencia)

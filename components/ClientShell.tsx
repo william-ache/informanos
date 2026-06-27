@@ -7,6 +7,15 @@ const HomeApp = dynamic(() => import("@/components/HomeApp"), {
   loading: () => null,
 });
 
+const ConsoleCredit = dynamic(() => import("@/components/ConsoleCredit"), {
+  ssr: false,
+});
+
 export default function ClientShell() {
-  return <HomeApp />;
+  return (
+    <>
+      <ConsoleCredit />
+      <HomeApp />
+    </>
+  );
 }

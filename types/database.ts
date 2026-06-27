@@ -41,6 +41,7 @@ export interface CentroAcopio {
   aprox_ninos: number | null;
   aprox_personas: number | null;
   aprox_ancianos: number | null;
+  aprox_animales: number | null;
   creado_en: string;
   necesidades?: Necesidad[];
 }
@@ -56,6 +57,7 @@ export type NuevoCentroAcopio = Pick<
   | "aprox_ninos"
   | "aprox_personas"
   | "aprox_ancianos"
+  | "aprox_animales"
 >;
 
 export interface ChatMensaje {

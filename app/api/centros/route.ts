@@ -18,6 +18,7 @@ interface CentroRow extends RowDataPacket {
   aprox_ninos: number | null;
   aprox_personas: number | null;
   aprox_ancianos: number | null;
+  aprox_animales: number | null;
   creado_en: string;
 }
 
@@ -35,6 +36,8 @@ function mapCentro(row: CentroRow, necesidades: Necesidad[]): CentroAcopio {
       row.aprox_personas === null ? null : Number(row.aprox_personas),
     aprox_ancianos:
       row.aprox_ancianos === null ? null : Number(row.aprox_ancianos),
+    aprox_animales:
+      row.aprox_animales === null ? null : Number(row.aprox_animales),
     creado_en: row.creado_en,
     necesidades,
   };
@@ -49,7 +52,7 @@ export async function GET() {
 
     const [centrosRows] = await pool.query<CentroRow[]>(
       `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto,
-              aprox_ninos, aprox_personas, aprox_ancianos, creado_en
+              aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales, creado_en
        FROM centros_acopio
        ORDER BY nombre ASC`,
     );
@@ -118,6 +121,7 @@ export async function POST(request: Request) {
       aprox_ninos: parsePoblacion(body.aprox_ninos),
       aprox_personas: parsePoblacion(body.aprox_personas),
       aprox_ancianos: parsePoblacion(body.aprox_ancianos),
+      aprox_animales: parsePoblacion(body.aprox_animales),
     };
 
     const id = randomUUID();
@@ -125,8 +129,8 @@ export async function POST(request: Request) {
     await pool.execute(
       `INSERT INTO centros_acopio
         (id, nombre, municipio, direccion, latitud, longitud, contacto,
-         aprox_ninos, aprox_personas, aprox_ancianos)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         centro.nombre,
@@ -138,12 +142,13 @@ export async function POST(request: Request) {
         centro.aprox_ninos,
         centro.aprox_personas,
         centro.aprox_ancianos,
+        centro.aprox_animales,
       ],
     );
 
     const [rows] = await pool.query<CentroRow[]>(
       `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto,
-              aprox_ninos, aprox_personas, aprox_ancianos, creado_en
+              aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales, creado_en
        FROM centros_acopio
        WHERE id = ?`,
       [id],

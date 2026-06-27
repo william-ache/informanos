@@ -68,6 +68,7 @@ export async function ensureSchema(): Promise<void> {
         `ALTER TABLE centros_acopio ADD COLUMN aprox_ninos INT NULL AFTER contacto`,
         `ALTER TABLE centros_acopio ADD COLUMN aprox_personas INT NULL AFTER aprox_ninos`,
         `ALTER TABLE centros_acopio ADD COLUMN aprox_ancianos INT NULL AFTER aprox_personas`,
+        `ALTER TABLE centros_acopio ADD COLUMN aprox_animales INT NULL AFTER aprox_ancianos`,
       ];
 
       for (const sql of poblacionAlters) {
