@@ -13,22 +13,24 @@ import {
   obtenerChatAutor,
 } from "@/lib/chat-autor";
 import { datosExtendidosPermitidos } from "@/lib/privacidad";
+import { chatKey } from "@/lib/swr-keys";
+import { zonaLabel } from "@/lib/zona-context";
 import ChatMensajeCard from "@/components/ChatMensajeCard";
-import type { ChatMensaje } from "@/types/database";
+import type { ChatMensaje, ZonaId } from "@/types/database";
 
 interface ChatResponse {
   mensajes: ChatMensaje[];
 }
 
-const CHAT_KEY = "/api/chat";
-
 interface StreamingChatProps {
+  zona: ZonaId;
   fullHeight?: boolean;
   hideHeader?: boolean;
   onIrACentro?: (centroId: string) => void;
 }
 
 export default function StreamingChat({
+  zona,
   fullHeight = false,
   hideHeader = false,
   onIrACentro,
@@ -42,9 +44,10 @@ export default function StreamingChat({
   const listaRef = useRef<HTMLDivElement>(null);
   const pageVisible = usePageVisible();
   const inputActivo = useInputActivo();
+  const chatUrl = chatKey(zona);
 
   const { data, error: swrError, isLoading } = useSWR<ChatResponse>(
-    CHAT_KEY,
+    chatUrl,
     fetcher,
     {
       ...swrDefaults,
@@ -102,7 +105,7 @@ export default function StreamingChat({
     }
 
     try {
-      const res = await fetch(CHAT_KEY, {
+      const res = await fetch(chatUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -110,6 +113,7 @@ export default function StreamingChat({
           mensaje: mensaje.trim(),
           latitud,
           longitud,
+          zona,
         }),
       });
 
@@ -119,7 +123,7 @@ export default function StreamingChat({
       }
 
       setMensaje("");
-      await mutate(CHAT_KEY);
+      await mutate(chatUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar.");
     } finally {
@@ -136,7 +140,7 @@ export default function StreamingChat({
       {!fullHeight && !hideHeader && (
         <header className="border-b border-slate-800 px-4 py-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">
-            Chat en vivo
+            Chat en vivo · {zonaLabel(zona)}
           </p>
         </header>
       )}

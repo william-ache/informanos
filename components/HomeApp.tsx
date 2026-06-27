@@ -36,7 +36,12 @@ import {
   consumirInstalacionPendiente,
 } from "@/lib/pwa-install";
 import { obtenerConsentimientoPrivacidad, PRIVACIDAD_EVENT } from "@/lib/privacidad";
+import { useZonaContext, zonaLabel } from "@/lib/zona-context";
 import type { CentroAcopio, NuevoCentroAcopio, TipoLugar, UrgenciaNivel } from "@/types/database";
+
+const ZonaSelector = dynamic(() => import("@/components/ZonaSelector"), {
+  ssr: false,
+});
 
 const Map = dynamic(() => import("@/components/Map"), {
   ssr: false,
@@ -98,8 +103,6 @@ const InstalarAppModal = dynamic(() => import("@/components/InstalarAppModal"), 
   ssr: false,
 });
 
-const CENTROS_KEY = "/api/centros";
-
 type Tab = "mapa" | "centros" | "chat" | "reportar" | "donaciones";
 type DesktopPanel = "centros" | "reportar" | "chat";
 
@@ -160,9 +163,15 @@ export default function HomeApp() {
   const inputActivo = useInputActivo();
   const { pendiente: privacidadPendiente } = usePrivacidad();
   const pwaInstall = usePwaInstall();
+  const {
+    zona,
+    centrosKey,
+    revalidateCentros,
+    revalidateChat,
+  } = useZonaContext();
 
   const { data, error, isLoading } = useSWR<CentrosResponse>(
-    CENTROS_KEY,
+    centrosKey,
     fetcher,
     {
       ...swrDefaults,
@@ -171,6 +180,11 @@ export default function HomeApp() {
   );
 
   const centros = data?.centros ?? [];
+
+  useEffect(() => {
+    setCentroActivoId(null);
+    setTextoBusqueda("");
+  }, [zona]);
 
   useEffect(() => {
     if (data) setUltimoSync(new Date().toISOString());
@@ -297,9 +311,9 @@ export default function HomeApp() {
   }
 
   const refrescarDatosAdmin = useCallback(async () => {
-    await mutate(CENTROS_KEY);
-    await mutate("/api/chat");
-  }, []);
+    await revalidateCentros();
+    await revalidateChat();
+  }, [revalidateCentros, revalidateChat]);
 
   const donacionesActivas = useMemo(
     () =>
@@ -325,10 +339,10 @@ export default function HomeApp() {
   const onRegistrarCentro = useCallback(async (centro: NuevoCentroAcopio): Promise<CentroAcopio> => {
     setAccionError(null);
 
-    const res = await fetch(CENTROS_KEY, {
+    const res = await fetch(centrosKey, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(centro),
+      body: JSON.stringify({ ...centro, zona }),
     });
 
     const body = (await res.json().catch(() => null)) as {
@@ -343,7 +357,7 @@ export default function HomeApp() {
     }
 
     await mutate(
-      CENTROS_KEY,
+      centrosKey,
       (actual) => {
         const previos = actual?.centros ?? [];
         if (previos.some((c: CentroAcopio) => c.id === body.centro!.id)) return actual;
@@ -353,7 +367,7 @@ export default function HomeApp() {
     );
 
     return body.centro;
-  }, []);
+  }, [centrosKey, zona]);
 
   async function agregarNecesidad(event: React.FormEvent) {
     event.preventDefault();
@@ -388,7 +402,7 @@ export default function HomeApp() {
 
       setNecesidadForm(emptyNecesidad);
       setHintNuevoLugar(null);
-      await mutate(CENTROS_KEY);
+      await revalidateCentros();
       if (isDesktop) setDesktopPanel("centros");
       else setTab("centros");
     } catch (err) {
@@ -424,7 +438,7 @@ export default function HomeApp() {
                   onClick={onSecretAdminTap}
                   className="cursor-default text-xs font-semibold uppercase tracking-widest text-red-400 select-none"
                 >
-                  Emergencia · Estado Aragua
+                  Emergencia · {zonaLabel(zona)}
                 </p>
                 <h1 className="mt-1 text-xl font-bold">Centros de Acopio</h1>
               </div>
@@ -436,6 +450,7 @@ export default function HomeApp() {
                 Reportar
               </button>
             </div>
+            <ZonaSelector />
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
               <span>{centrosActivos.length} activos</span>
               {urgentes > 0 && (
@@ -505,7 +520,12 @@ export default function HomeApp() {
             )}
 
             {desktopPanel === "chat" && (
-              <StreamingChat fullHeight hideHeader onIrACentro={irACentroEnMapa} />
+              <StreamingChat
+                zona={zona}
+                fullHeight
+                hideHeader
+                onIrACentro={irACentroEnMapa}
+              />
             )}
           </div>
         </aside>
@@ -520,7 +540,7 @@ export default function HomeApp() {
                 onClick={onSecretAdminTap}
                 className="cursor-default text-[10px] font-bold uppercase tracking-widest text-red-400 select-none"
               >
-                Emergencia · Aragua
+                Emergencia · {zonaLabel(zona)}
               </p>
               <h1 className="text-base font-bold leading-tight">
                 {tabs.find((t) => t.id === tab)?.label ?? "Informa"}
@@ -548,6 +568,7 @@ export default function HomeApp() {
 
       {!isDesktop && tab === "mapa" && (
         <div className="shrink-0 space-y-2 border-b border-slate-800 bg-slate-900 px-3 py-2">
+          <ZonaSelector compact />
           <CentroBuscador
             centros={centrosActivos}
             activoId={centroActivoId}
@@ -567,6 +588,7 @@ export default function HomeApp() {
           }`}
         >
           <Map
+            zona={zona}
             active={mapActive}
             centros={centrosMapaFiltrados}
             centroActivoId={centroActivoId}
@@ -585,7 +607,11 @@ export default function HomeApp() {
             className="h-full"
           />
           {mapActive && (
-            <LiveChatOverlay showNavOffset={!isDesktop} onIrACentro={irACentroEnMapa} />
+            <LiveChatOverlay
+              zona={zona}
+              showNavOffset={!isDesktop}
+              onIrACentro={irACentroEnMapa}
+            />
           )}
         </div>
 
@@ -614,7 +640,7 @@ export default function HomeApp() {
 
         {showMobileChat && (
           <div className="absolute inset-0 z-10 h-full bg-slate-950">
-            <StreamingChat fullHeight onIrACentro={irACentroEnMapa} />
+            <StreamingChat zona={zona} fullHeight onIrACentro={irACentroEnMapa} />
           </div>
         )}
 

@@ -12,6 +12,7 @@ import {
 import { TIPO_LUGAR_OPCIONES } from "@/lib/tipo-lugar";
 import { AYUDAS_SOLICITADAS, ayudaDesdeCentro, type AyudaSolicitada } from "@/lib/ayuda-solicitada";
 import { resolverVotoPresencial } from "@/lib/voto-presencial";
+import { useZonaContext } from "@/lib/zona-context";
 import type {
   AccionPropuestaNecesidad,
   CentroAcopio,
@@ -19,8 +20,6 @@ import type {
   TipoLugar,
   UrgenciaNivel,
 } from "@/types/database";
-
-const CENTROS_KEY = "/api/centros";
 
 interface CentroEditarModalProps {
   open: boolean;
@@ -143,6 +142,7 @@ export default function CentroEditarModal({
   centro,
   onClose,
 }: CentroEditarModalProps) {
+  const { centrosKey, revalidateCentros } = useZonaContext();
   const [form, setForm] = useState<FormState | null>(null);
   const [tipoOriginal, setTipoOriginal] = useState<TipoLugar>("acopio");
   const [guardando, setGuardando] = useState(false);
@@ -206,7 +206,7 @@ export default function CentroEditarModal({
 
     const body = (await res.json()) as { propuesta: PropuestaTipoLugar };
     await mutate(
-      CENTROS_KEY,
+      centrosKey,
       (actual: { centros: CentroAcopio[] } | undefined) => {
         if (!actual) return actual;
         return {
@@ -240,7 +240,7 @@ export default function CentroEditarModal({
       throw new Error(body?.error ?? "No se pudo iniciar la votación de insumos.");
     }
 
-    await mutate(CENTROS_KEY, undefined, { revalidate: true });
+    await mutate(centrosKey, undefined, { revalidate: true });
   }
 
   function irSiguienteVotacion(
@@ -295,7 +295,7 @@ export default function CentroEditarModal({
         throw new Error(body?.error ?? "No se pudo guardar.");
       }
 
-      await mutate(CENTROS_KEY);
+      await revalidateCentros();
 
       const tipoCambio = form.tipoLugar !== tipoOriginal;
       const insumosCambio = mostrarInsumosEnCentro(centro)

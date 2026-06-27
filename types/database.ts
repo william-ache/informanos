@@ -1,3 +1,5 @@
+export type ZonaId = "aragua" | "caracas";
+
 export type TipoReporteError =
   | "error_sistema"
   | "info_erronea"
@@ -59,6 +61,7 @@ export interface PropuestaNecesidad {
 
 export interface CentroAcopio {
   id: string;
+  zona: ZonaId;
   nombre: string;
   municipio: string;
   direccion: string | null;
@@ -134,6 +137,7 @@ export type NuevoCentroAcopio = Pick<
 
 export interface ChatMensaje {
   id: string;
+  zona: ZonaId;
   centro_id: string | null;
   centro_ref: string | null;
   centro_activo: boolean | null;
@@ -144,7 +148,7 @@ export interface ChatMensaje {
   creado_en: string;
 }
 
-export type NuevoChatMensaje = Pick<ChatMensaje, "autor" | "mensaje" | "centro_id"> & {
+export type NuevoChatMensaje = Pick<ChatMensaje, "autor" | "mensaje" | "centro_id" | "zona"> & {
   latitud?: number | null;
   longitud?: number | null;
 };

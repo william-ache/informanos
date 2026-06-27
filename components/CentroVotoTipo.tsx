@@ -13,6 +13,7 @@ import {
   textoReglasVotacion,
 } from "@/lib/propuesta-tipo";
 import { colorTipoLugar, etiquetaTipoLugar, TIPO_LUGAR_OPCIONES } from "@/lib/tipo-lugar";
+import { useZonaContext } from "@/lib/zona-context";
 import type {
   CentroAcopio,
   PropuestaTipoLugar,
@@ -20,7 +21,6 @@ import type {
 } from "@/types/database";
 
 const GEOCERCA_METROS = 500;
-const CENTROS_KEY = "/api/centros";
 
 interface CentrosResponse {
   centros: CentroAcopio[];
@@ -102,6 +102,7 @@ interface CentroVotoTipoProps {
 }
 
 export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTipoProps) {
+  const { centrosKey, revalidateCentros } = useZonaContext();
   const [procesando, setProcesando] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -123,7 +124,7 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
 
   useEffect(() => {
     if (!propuesta || segundos > 0) return;
-    void mutate(CENTROS_KEY);
+    void mutate(centrosKey);
   }, [propuesta, segundos]);
 
   async function proponer(tipo: TipoLugar) {
@@ -152,7 +153,7 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
 
       const body = (await res.json()) as { propuesta: PropuestaTipoLugar };
       await mutate(
-        CENTROS_KEY,
+        centrosKey,
         (actual: CentrosResponse | undefined) =>
           actualizarPropuestaEnCentros(actual, centro.id, body.propuesta),
         { revalidate: true },
@@ -189,7 +190,7 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
 
       const body = (await res.json()) as { propuesta: PropuestaTipoLugar };
       await mutate(
-        CENTROS_KEY,
+        centrosKey,
         (actual: CentrosResponse | undefined) =>
           actualizarPropuestaEnCentros(actual, centro.id, body.propuesta),
         { revalidate: true },

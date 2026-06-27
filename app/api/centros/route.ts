@@ -1,6 +1,13 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
+import {
+  detectarZona,
+  mensajeFueraTodasZonas,
+  mensajeFueraZona,
+  parseZona,
+  parseZonaParam,
+  puntoEnZona,
+} from "@/lib/zones";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
 import { publicarEnChat } from "@/lib/chat-actividad";
@@ -24,7 +31,7 @@ import {
 } from "@/lib/tipo-lugar";
 import type { CentroAcopio, Necesidad, NuevoCentroAcopio } from "@/types/database";
 
-export async function GET() {
+export async function GET(request: Request) {
   const configError = requireDb();
   if (configError) return configError;
 
@@ -32,10 +39,15 @@ export async function GET() {
     await ensureSchema();
     await sincronizarUrgenciaPorNecesidades();
 
+    const { searchParams } = new URL(request.url);
+    const zona = parseZonaParam(searchParams.get("zona"));
+
     const [centrosRows] = await pool.query<CentroRow[]>(
       `SELECT ${CENTRO_SELECT}
        FROM centros_acopio
+       WHERE zona = ?
        ORDER BY nombre ASC`,
+      [zona],
     );
 
     const [necesidadesRows] = await pool.query<NecesidadRow[]>(
@@ -113,8 +125,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!puntoEnAragua(latitud, longitud)) {
-      return NextResponse.json({ error: MENSAJE_FUERA_ARAGUA }, { status: 400 });
+    const zonaSolicitada = parseZona(body.zona) ?? detectarZona(latitud, longitud);
+    if (!zonaSolicitada) {
+      return NextResponse.json({ error: mensajeFueraTodasZonas() }, { status: 400 });
+    }
+
+    if (!puntoEnZona(zonaSolicitada, latitud, longitud)) {
+      return NextResponse.json(
+        { error: mensajeFueraZona(zonaSolicitada) },
+        { status: 400 },
+      );
     }
 
     const donacionNecesita =
@@ -164,12 +184,13 @@ export async function POST(request: Request) {
 
     await pool.execute(
       `INSERT INTO centros_acopio
-        (id, nombre, municipio, direccion, latitud, longitud, contacto,
+        (id, zona, nombre, municipio, direccion, latitud, longitud, contacto,
          aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales,
          tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
+        zonaSolicitada,
         centro.nombre,
         centro.municipio,
         centro.direccion,

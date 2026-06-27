@@ -1,5 +1,6 @@
 import type { RowDataPacket } from "mysql2";
 import { parseTipoLugar } from "@/lib/tipo-lugar";
+import { parseZona } from "@/lib/zones";
 import type {
   CentroAcopio,
   EstadoOperativoCentro,
@@ -11,6 +12,7 @@ import type {
 
 export interface CentroRow extends RowDataPacket {
   id: string;
+  zona: string | null;
   nombre: string;
   municipio: string;
   direccion: string | null;
@@ -37,7 +39,7 @@ export interface CentroRow extends RowDataPacket {
   creado_en: string;
 }
 
-export const CENTRO_SELECT = `id, nombre, municipio, direccion, descripcion, latitud, longitud, contacto,
+export const CENTRO_SELECT = `id, zona, nombre, municipio, direccion, descripcion, latitud, longitud, contacto,
   aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales,
   tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte,
   estado_operativo, finalizado_en,
@@ -54,6 +56,7 @@ export function mapCentro(
 ): CentroAcopio {
   return {
     id: row.id,
+    zona: parseZona(row.zona) ?? "aragua",
     nombre: row.nombre,
     municipio: row.municipio,
     direccion: row.direccion,

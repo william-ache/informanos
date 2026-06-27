@@ -7,10 +7,9 @@ import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
 import { useCampanaInforma } from "@/hooks/use-campana-informa";
 import { swrDefaults } from "@/lib/swr-config";
+import { chatKey } from "@/lib/swr-keys";
 import ChatMensajeCard from "@/components/ChatMensajeCard";
-import type { ChatMensaje } from "@/types/database";
-
-const CHAT_KEY = "/api/chat";
+import type { ChatMensaje, ZonaId } from "@/types/database";
 
 interface ChatResponse {
   mensajes: ChatMensaje[];
@@ -21,11 +20,13 @@ interface FloatMsg extends ChatMensaje {
 }
 
 interface LiveChatOverlayProps {
+  zona: ZonaId;
   showNavOffset?: boolean;
   onIrACentro?: (centroId: string) => void;
 }
 
 export default function LiveChatOverlay({
+  zona,
   showNavOffset = true,
   onIrACentro,
 }: LiveChatOverlayProps) {
@@ -34,14 +35,21 @@ export default function LiveChatOverlay({
   const readyRef = useRef(false);
   const pageVisible = usePageVisible();
   const inputActivo = useInputActivo();
+  const chatUrl = chatKey(zona);
 
-  const { data } = useSWR<ChatResponse>(CHAT_KEY, fetcher, {
+  const { data } = useSWR<ChatResponse>(chatUrl, fetcher, {
     ...swrDefaults,
     refreshInterval: pageVisible && !inputActivo ? 2000 : 0,
   });
 
   const mensajes = data?.mensajes ?? [];
   useCampanaInforma(mensajes);
+
+  useEffect(() => {
+    seenRef.current.clear();
+    readyRef.current = false;
+    setFloats([]);
+  }, [zona]);
 
   useEffect(() => {
     if (!mensajes.length) return;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { mutate } from "swr";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import { resolverVotoPresencial } from "@/lib/voto-presencial";
+import { useZonaContext } from "@/lib/zona-context";
 import type { CentroAcopio, Necesidad, VerificarAccion } from "@/types/database";
 import NecesidadPropuestaVoto from "@/components/NecesidadPropuestaVoto";
 
@@ -75,6 +76,7 @@ function reemplazarNecesidad(
 }
 
 export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProps) {
+  const { centrosKey } = useZonaContext();
   const [votando, setVotando] = useState(false);
   const propuestaEdit = necesidad.propuesta_edit ?? null;
 
@@ -90,7 +92,7 @@ export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProp
       const peso = esTestigo ? 2 : 1;
 
       await mutate(
-        "/api/centros",
+        centrosKey,
         async (actual: CentrosResponse | undefined) => {
           const res = await fetch("/api/necesidades/verificar", {
             method: "POST",

@@ -9,9 +9,8 @@ import {
   segundosRestantes,
 } from "@/lib/propuesta-tipo";
 import { resolverVotoPresencial } from "@/lib/voto-presencial";
+import { useZonaContext } from "@/lib/zona-context";
 import type { CentroAcopio, PropuestaNecesidad } from "@/types/database";
-
-const CENTROS_KEY = "/api/centros";
 
 interface CentrosResponse {
   centros: CentroAcopio[];
@@ -65,6 +64,7 @@ export default function NecesidadPropuestaVoto({
   propuesta,
   compact = false,
 }: NecesidadPropuestaVotoProps) {
+  const { centrosKey, revalidateCentros } = useZonaContext();
   const [procesando, setProcesando] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const activa = propuestaActiva(propuesta) ? propuesta : null;
@@ -82,7 +82,7 @@ export default function NecesidadPropuestaVoto({
 
   useEffect(() => {
     if (!activa || segundos > 0) return;
-    void mutate(CENTROS_KEY);
+    void mutate(centrosKey);
   }, [activa, segundos]);
 
   if (!activa || segundos <= 0) return null;
@@ -111,7 +111,7 @@ export default function NecesidadPropuestaVoto({
 
       const body = (await res.json()) as { propuesta: PropuestaNecesidad };
       await mutate(
-        CENTROS_KEY,
+        centrosKey,
         (actual: CentrosResponse | undefined) =>
           actualizarPropuesta(actual, body.propuesta),
         { revalidate: true },

@@ -216,6 +216,42 @@ export async function ensureSchema(): Promise<void> {
         if (!message.includes("Duplicate column")) throw error;
       }
 
+      try {
+        await pool.query(
+          `ALTER TABLE centros_acopio ADD COLUMN zona ENUM('aragua', 'caracas') NOT NULL DEFAULT 'aragua' AFTER id`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Duplicate column")) throw error;
+      }
+
+      try {
+        await pool.query(
+          `ALTER TABLE chat_mensajes ADD COLUMN zona ENUM('aragua', 'caracas') NOT NULL DEFAULT 'aragua' AFTER id`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Duplicate column")) throw error;
+      }
+
+      try {
+        await pool.query(
+          `CREATE INDEX idx_centros_zona ON centros_acopio (zona)`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Duplicate key name")) throw error;
+      }
+
+      try {
+        await pool.query(
+          `CREATE INDEX idx_chat_zona_creado ON chat_mensajes (zona, creado_en)`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Duplicate key name")) throw error;
+      }
+
       const ayudaAlters = [
         `ALTER TABLE centros_acopio ADD COLUMN solicita_transporte TINYINT(1) NOT NULL DEFAULT 0 AFTER finalizado_en`,
         `ALTER TABLE centros_acopio ADD COLUMN solicita_medico TINYINT(1) NOT NULL DEFAULT 0 AFTER solicita_transporte`,

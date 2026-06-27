@@ -1,6 +1,12 @@
 import type { RowDataPacket } from "mysql2";
 import { NextResponse } from "next/server";
-import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
+import {
+  detectarZona,
+  mensajeFueraTodasZonas,
+  mensajeFueraZona,
+  parseZona,
+  puntoEnZona,
+} from "@/lib/zones";
 import { requireAdmin } from "@/lib/admin-auth";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
@@ -70,11 +76,12 @@ export async function PATCH(request: Request, { params }: Params) {
       if (lat === null || lng === null) {
         return NextResponse.json({ error: "Latitud/longitud inválidas." }, { status: 400 });
       }
-      if (!puntoEnAragua(lat, lng)) {
-        return NextResponse.json({ error: MENSAJE_FUERA_ARAGUA }, { status: 400 });
+      const zonaCoords = detectarZona(lat, lng);
+      if (!zonaCoords || !puntoEnZona(zonaCoords, lat, lng)) {
+        return NextResponse.json({ error: mensajeFueraTodasZonas() }, { status: 400 });
       }
-      campos.push("latitud = ?", "longitud = ?");
-      valores.push(lat, lng);
+      campos.push("latitud = ?", "longitud = ?", "zona = ?");
+      valores.push(lat, lng, zonaCoords);
     }
     if ("aprox_ninos" in body) {
       campos.push("aprox_ninos = ?");

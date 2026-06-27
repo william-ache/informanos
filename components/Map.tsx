@@ -9,20 +9,17 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import CentroMarkers from "@/components/CentroMarkers";
-import AraguaBoundary from "@/components/AraguaBoundary";
+import ZoneBoundary from "@/components/ZoneBoundary";
 import AgregarLugarSheet from "@/components/AgregarLugarSheet";
 import ReportarCentroModal from "@/components/ReportarCentroModal";
 import ModalPortal from "@/components/ModalPortal";
-import type { CentroAcopio, NuevoCentroAcopio, TipoLugar } from "@/types/database";
+import type { CentroAcopio, NuevoCentroAcopio, TipoLugar, ZonaId } from "@/types/database";
 import { detectarLugar } from "@/lib/geocoding";
-import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
+import { mensajeFueraZona, puntoEnZona, ZONA_CONFIG } from "@/lib/zones";
 import { parsePoblacionInput } from "@/lib/poblacion";
 import { TIPO_LUGAR_OPCIONES } from "@/lib/tipo-lugar";
 import { configureLeafletIcons } from "@/lib/leaflet-icons";
 import "leaflet/dist/leaflet.css";
-
-const ARAGUA_CENTER: [number, number] = [10.25, -67.45];
-const INITIAL_ZOOM = 10;
 
 interface FormState {
   tipoLugar: TipoLugar;
@@ -57,6 +54,7 @@ const emptyForm = (tipoLugar: TipoLugar = "acopio"): FormState => ({
 });
 
 interface MapProps {
+  zona: ZonaId;
   centros: CentroAcopio[];
   centroActivoId?: string | null;
   onReportarCentro?: (centro: CentroAcopio) => void;
@@ -154,7 +152,19 @@ function MapCenterTracker({
   return null;
 }
 
+function MapZonaSync({ zona }: { zona: ZonaId }) {
+  const map = useMap();
+  const cfg = ZONA_CONFIG[zona];
+
+  useEffect(() => {
+    map.setView(cfg.center, cfg.zoom, { animate: true });
+  }, [zona, map, cfg.center, cfg.zoom]);
+
+  return null;
+}
+
 function MapView({
+  zona,
   centros,
   centroActivoId,
   onReportarCentro,
@@ -189,7 +199,11 @@ function MapView({
     null,
   );
   const [editarLugarOpen, setEditarLugarOpen] = useState(false);
-  const centroMapaRef = useRef({ lat: ARAGUA_CENTER[0], lng: ARAGUA_CENTER[1] });
+  const zonaCfg = ZONA_CONFIG[zona];
+  const centroMapaRef = useRef({
+    lat: zonaCfg.center[0],
+    lng: zonaCfg.center[1],
+  });
 
   const onCentroMapaChange = useCallback((lat: number, lng: number) => {
     centroMapaRef.current = { lat, lng };
@@ -213,8 +227,8 @@ function MapView({
   }, [alertaZona]);
 
   async function abrirFormulario(lat: number, lng: number) {
-    if (!puntoEnAragua(lat, lng)) {
-      setAlertaZona(MENSAJE_FUERA_ARAGUA);
+    if (!puntoEnZona(zona, lat, lng)) {
+      setAlertaZona(mensajeFueraZona(zona));
       return;
     }
 
@@ -286,8 +300,8 @@ function MapView({
       return;
     }
 
-    if (!puntoEnAragua(coords.lat, coords.lng)) {
-      setAlertaZona(MENSAJE_FUERA_ARAGUA);
+    if (!puntoEnZona(zona, coords.lat, coords.lng)) {
+      setAlertaZona(mensajeFueraZona(zona));
       cerrarModal();
       return;
     }
@@ -342,8 +356,8 @@ function MapView({
   return (
     <div className={`relative h-full w-full ${className}`}>
       <MapContainer
-        center={ARAGUA_CENTER}
-        zoom={INITIAL_ZOOM}
+        center={zonaCfg.center}
+        zoom={zonaCfg.zoom}
         preferCanvas
         className="h-full w-full"
         style={{
@@ -360,7 +374,8 @@ function MapView({
         />
 
         <MapResize active={active} />
-        <AraguaBoundary />
+        <MapZonaSync zona={zona} />
+        <ZoneBoundary zona={zona} />
         {flyTarget && modalAbierto && (
           <MapFlyTo lat={flyTarget.lat} lng={flyTarget.lng} />
         )}
@@ -412,7 +427,7 @@ function MapView({
 
       {seleccionMapa && !modalAbierto && (
         <div className="pointer-events-none absolute bottom-16 left-3 right-3 z-[1000] mx-auto max-w-sm rounded-xl bg-black/80 px-4 py-2.5 text-center text-sm text-white lg:bottom-20">
-          Toca el mapa dentro de la zona roja (Estado Aragua)
+          Toca el mapa dentro de la zona resaltada ({zonaCfg.label})
         </div>
       )}
 

@@ -15,9 +15,8 @@ import {
   segundosRestantes,
 } from "@/lib/propuesta-tipo";
 import { resolverVotoPresencial } from "@/lib/voto-presencial";
+import { useZonaContext } from "@/lib/zona-context";
 import type { CentroAcopio, PropuestaOperativoCentro } from "@/types/database";
-
-const CENTROS_KEY = "/api/centros";
 
 interface CentrosResponse {
   centros: CentroAcopio[];
@@ -51,6 +50,7 @@ export default function CentroVotoOperativo({
   modo,
   compact = false,
 }: CentroVotoOperativoProps) {
+  const { centrosKey, revalidateCentros } = useZonaContext();
   const [procesando, setProcesando] = useState(false);
   const [segundos, setSegundos] = useState(0);
 
@@ -77,7 +77,7 @@ export default function CentroVotoOperativo({
 
   useEffect(() => {
     if (!propuesta || segundos > 0) return;
-    void mutate(CENTROS_KEY);
+    void mutate(centrosKey);
   }, [propuesta, segundos]);
 
   async function iniciar() {
@@ -109,7 +109,7 @@ export default function CentroVotoOperativo({
 
       const body = (await res.json()) as { propuesta: PropuestaOperativoCentro };
       await mutate(
-        CENTROS_KEY,
+        centrosKey,
         (actual: CentrosResponse | undefined) =>
           actualizarPropuesta(actual, centro.id, body.propuesta, modo),
         { revalidate: true },
@@ -146,7 +146,7 @@ export default function CentroVotoOperativo({
 
       const body = (await res.json()) as { propuesta: PropuestaOperativoCentro };
       await mutate(
-        CENTROS_KEY,
+        centrosKey,
         (actual: CentrosResponse | undefined) =>
           actualizarPropuesta(actual, centro.id, body.propuesta, modo),
         { revalidate: true },
