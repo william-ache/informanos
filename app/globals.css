@@ -29,15 +29,46 @@ textarea {
   font-family: inherit;
 }
 
-/* Popup compacto: el mapa sigue draggable fuera de la tarjeta */
+/* Popup compacto: arrastrar en la tarjeta mueve el mapa; solo botones/enlaces capturan toque */
 .leaflet-popup.centro-popup {
   pointer-events: none;
 }
 
 .leaflet-popup.centro-popup .leaflet-popup-content-wrapper {
-  pointer-events: auto;
+  pointer-events: none;
   border-radius: 10px;
   padding: 0;
+}
+
+.leaflet-popup.centro-popup .leaflet-popup-content {
+  margin: 8px 10px 8px 8px;
+}
+
+.leaflet-popup.centro-popup .leaflet-popup-close-button {
+  pointer-events: auto;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font:
+    20px/24px Arial,
+    sans-serif;
+  color: #64748b;
+  text-align: center;
+}
+
+.leaflet-popup.centro-popup .leaflet-popup-close-button:hover {
+  color: #0f172a;
+}
+
+.centro-popup-inner {
+  pointer-events: none;
+}
+
+.centro-popup-inner .centro-popup-btn,
+.centro-popup-inner .centro-popup-link {
+  pointer-events: auto;
 }
 
 .leaflet-popup-content-wrapper {

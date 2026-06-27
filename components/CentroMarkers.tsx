@@ -64,22 +64,11 @@ function CentroMarkerItem({
         className="centro-popup"
       >
         <div className="centro-popup-inner w-[min(230px,calc(100vw-3rem))] text-slate-900">
-          <div className="flex items-start gap-1.5">
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-[13px] font-bold leading-snug">
-                {centro.nombre}
-              </p>
-              <p className="text-[11px] text-slate-500">{centro.municipio}</p>
-            </div>
-            {onReportarLugar && (
-              <button
-                type="button"
-                onClick={() => onReportarLugar(centro)}
-                className="shrink-0 rounded border border-amber-400 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-800"
-              >
-                Rep.
-              </button>
-            )}
+          <div className="pr-5">
+            <p className="line-clamp-2 text-[13px] font-bold leading-snug">
+              {centro.nombre}
+            </p>
+            <p className="text-[11px] text-slate-500">{centro.municipio}</p>
           </div>
 
           {tienePoblacion(centro) && (
@@ -93,7 +82,7 @@ function CentroMarkerItem({
               {centro.contacto.split(",")[0]?.trim() && (
                 <a
                   href={`tel:${centro.contacto.split(",")[0].trim().replace(/\s/g, "")}`}
-                  className="text-blue-600 underline"
+                  className="centro-popup-link text-blue-600 underline"
                 >
                   {centro.contacto.split(",")[0].trim()}
                 </a>
@@ -122,35 +111,44 @@ function CentroMarkerItem({
             )}
           </div>
 
-          <div className="mt-1.5 grid grid-cols-2 gap-1 border-t border-slate-200 pt-1.5">
-            <button
-              type="button"
-              onClick={() => abrirEnGoogleMaps(centro.latitud, centro.longitud)}
-              className="rounded-md bg-blue-600 px-2 py-1.5 text-[10px] font-bold text-white"
-            >
-              Maps
-            </button>
-            {onReportar ? (
+          <div className="mt-1.5 space-y-1 border-t border-slate-200 pt-1.5">
+            <div className="grid grid-cols-2 gap-1">
               <button
                 type="button"
-                onClick={() => onReportar(centro)}
-                className="rounded-md bg-red-600 px-2 py-1.5 text-[10px] font-bold text-white"
+                onClick={() => abrirEnGoogleMaps(centro.latitud, centro.longitud)}
+                className="centro-popup-btn rounded-md bg-blue-600 px-2 py-1.5 text-[10px] font-bold text-white"
               >
-                Necesidad
+                Maps
               </button>
-            ) : (
-              <span />
+              {onReportar && (
+                <button
+                  type="button"
+                  onClick={() => onReportar(centro)}
+                  className="centro-popup-btn rounded-md bg-red-600 px-2 py-1.5 text-[10px] font-bold text-white"
+                >
+                  Necesidad
+                </button>
+              )}
+            </div>
+            {onReportarLugar && (
+              <button
+                type="button"
+                onClick={() => onReportarLugar(centro)}
+                className="centro-popup-btn w-full rounded-md border border-amber-400 bg-amber-50 px-2 py-1.5 text-[10px] font-bold text-amber-900"
+              >
+                Reportar
+              </button>
+            )}
+            {onVerLista && (
+              <button
+                type="button"
+                onClick={() => onVerLista(centro)}
+                className="centro-popup-btn w-full rounded-md border border-slate-300 bg-slate-50 px-2 py-1.5 text-[10px] font-semibold text-slate-700"
+              >
+                Ver detalle y votos
+              </button>
             )}
           </div>
-          {onVerLista && (
-            <button
-              type="button"
-              onClick={() => onVerLista(centro)}
-              className="mt-1 w-full text-center text-[10px] font-medium text-slate-600 underline"
-            >
-              Ver detalle y votos
-            </button>
-          )}
         </div>
       </Popup>
     </Marker>
