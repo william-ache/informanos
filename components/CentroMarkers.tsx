@@ -11,43 +11,77 @@ function urgenciaClass(urgencia: string) {
   return "text-emerald-600";
 }
 
-function CentroMarkersInner({ centros }: { centros: CentroAcopio[] }) {
+interface CentroMarkersProps {
+  centros: CentroAcopio[];
+  centroActivoId?: string | null;
+  onCentroClick?: (centro: CentroAcopio) => void;
+}
+
+function CentroMarkersInner({
+  centros,
+  centroActivoId,
+  onCentroClick,
+}: CentroMarkersProps) {
   return (
     <>
-      {centros.map((centro) => (
-        <Marker key={centro.id} position={[centro.latitud, centro.longitud]}>
-          <Popup>
-            <div className="min-w-[200px] max-w-[260px] text-slate-900">
-              <p className="font-bold leading-tight">{centro.nombre}</p>
-              <p className="mt-1 text-sm text-slate-600">
-                {centro.municipio}
-                {centro.contacto ? ` · ${centro.contacto}` : ""}
-              </p>
+      {centros.map((centro) => {
+        const activo = centro.id === centroActivoId;
 
-              {centro.necesidades && centro.necesidades.length > 0 ? (
-                <ul className="mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs">
-                  {centro.necesidades.map((nec) => (
-                    <li key={nec.id}>
-                      <span className={urgenciaClass(nec.urgencia)}>
-                        {nec.urgencia.toUpperCase()}
-                      </span>
-                      {" · "}
-                      {nec.elemento} ({nec.cantidad_solicitada})
-                      <span className="mt-0.5 block text-slate-500">
-                        {formatFechaHumana(nec.actualizado_en)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 text-sm text-slate-500">
-                  Sin necesidades registradas.
+        return (
+          <Marker
+            key={centro.id}
+            position={[centro.latitud, centro.longitud]}
+            eventHandlers={{
+              click: () => onCentroClick?.(centro),
+            }}
+            opacity={centroActivoId && !activo ? 0.45 : 1}
+          >
+            <Popup>
+              <div className="min-w-[200px] max-w-[260px] text-slate-900">
+                <p className="font-bold leading-tight">{centro.nombre}</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {centro.municipio}
+                  {centro.contacto ? ` · ${centro.contacto}` : ""}
                 </p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+
+                {centro.necesidades && centro.necesidades.length > 0 ? (
+                  <ul className="mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs">
+                    {centro.necesidades.map((nec) => (
+                      <li key={nec.id}>
+                        <span className={urgenciaClass(nec.urgencia)}>
+                          {nec.urgencia.toUpperCase()}
+                        </span>
+                        {nec.estado === "agotado" && (
+                          <span className="ml-1 text-slate-500">· AGOTADO</span>
+                        )}
+                        {" · "}
+                        {nec.elemento} ({nec.cantidad_solicitada})
+                        <span className="mt-0.5 block text-slate-500">
+                          {formatFechaHumana(nec.actualizado_en)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">
+                    Sin necesidades registradas.
+                  </p>
+                )}
+
+                {onCentroClick && (
+                  <button
+                    type="button"
+                    onClick={() => onCentroClick(centro)}
+                    className="mt-3 w-full rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white"
+                  >
+                    Gestionar este lugar
+                  </button>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
     </>
   );
 }

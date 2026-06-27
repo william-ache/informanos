@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { swrDefaults } from "@/lib/swr-config";
@@ -11,7 +11,6 @@ const HEARTBEAT_MS = 15000;
 
 interface PresenceStats {
   enLinea: number;
-  ipsUnicas: number;
 }
 
 function obtenerSessionId(): string {
@@ -40,7 +39,7 @@ async function enviarHeartbeat(): Promise<PresenceStats> {
 
 export default function PresenceStats() {
   const pageVisible = usePageVisible();
-  const sessionReady = useRef(false);
+  const [conectado, setConectado] = useState(false);
 
   const { data } = useSWR<PresenceStats>(
     pageVisible ? PRESENCE_KEY : null,
@@ -57,11 +56,11 @@ export default function PresenceStats() {
     const ping = () => {
       enviarHeartbeat()
         .then((stats) => {
-          sessionReady.current = true;
+          setConectado(true);
           void mutate(PRESENCE_KEY, stats, { revalidate: false });
         })
         .catch(() => {
-          // informativo, no bloquear UI
+          setConectado(false);
         });
     };
 
@@ -71,16 +70,17 @@ export default function PresenceStats() {
   }, [pageVisible]);
 
   const enLinea = data?.enLinea ?? 0;
-  const ipsUnicas = data?.ipsUnicas ?? 0;
 
   return (
     <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
       <span className="inline-flex items-center gap-1">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            conectado ? "animate-pulse bg-emerald-400" : "bg-slate-600"
+          }`}
+        />
         {enLinea} en línea
       </span>
-      {" · "}
-      {ipsUnicas} IPs distintas (info)
     </p>
   );
 }

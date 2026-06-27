@@ -27,6 +27,14 @@ const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
   ssr: false,
 });
 
+const CentroChips = dynamic(() => import("@/components/CentroChips"), {
+  ssr: false,
+});
+
+const CentroAccionSheet = dynamic(() => import("@/components/CentroAccionSheet"), {
+  ssr: false,
+});
+
 const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
   ssr: false,
 });
@@ -64,6 +72,8 @@ export default function HomeApp() {
   const [accionError, setAccionError] = useState<string | null>(null);
   const [ultimoSync, setUltimoSync] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
+  const [centroSheet, setCentroSheet] = useState<CentroAcopio | null>(null);
   const pageVisible = usePageVisible();
 
   const { data, error, isLoading } = useSWR<CentrosResponse>(
@@ -90,10 +100,36 @@ export default function HomeApp() {
   }, []);
 
   const centrosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    if (!q) return centros;
-    return centros.filter((c) => c.municipio.toLowerCase().includes(q));
-  }, [centros, busqueda]);
+    let list = centros;
+
+    if (centroActivoId) {
+      list = list.filter((c) => c.id === centroActivoId);
+    } else {
+      const q = busqueda.trim().toLowerCase();
+      if (q) {
+        list = list.filter(
+          (c) =>
+            c.municipio.toLowerCase().includes(q) ||
+            c.nombre.toLowerCase().includes(q),
+        );
+      }
+    }
+
+    return list;
+  }, [centros, busqueda, centroActivoId]);
+
+  const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
+    setCentroActivoId(centro.id);
+    setNecesidadForm((prev) => ({ ...prev, centro_id: centro.id }));
+    setCentroSheet(null);
+    setTab("reportar");
+  }, []);
+
+  const verCentroEnLista = useCallback((centro: CentroAcopio) => {
+    setCentroActivoId(centro.id);
+    setCentroSheet(null);
+    setTab("centros");
+  }, []);
 
   const urgentes = useMemo(
     () =>
@@ -162,15 +198,27 @@ export default function HomeApp() {
         <div className={compact ? "px-4 pt-3" : "border-b border-slate-800 p-4"}>
           {!compact && (
             <label className="text-xs font-medium uppercase text-slate-400">
-              Buscar por municipio
+              Buscar centro
             </label>
           )}
           <input
             type="search"
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Maracay, Turmero, El Limón…"
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              if (e.target.value.trim()) setCentroActivoId(null);
+            }}
+            placeholder="Nombre o municipio…"
             className={`${inputClass} ${compact ? "" : "mt-2"}`}
+          />
+          <CentroChips
+            centros={centros}
+            activoId={centroActivoId}
+            onSeleccionar={(id) => {
+              setCentroActivoId(id);
+              if (id) setBusqueda("");
+            }}
+            className={compact ? "mt-3" : "mt-3"}
           />
         </div>
 
@@ -194,7 +242,12 @@ export default function HomeApp() {
               return (
                 <li
                   key={centro.id}
-                  className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 active:bg-slate-900"
+                  onClick={() => setCentroActivoId(centro.id)}
+                  className={`cursor-pointer rounded-xl border p-3.5 active:bg-slate-900 ${
+                    centroActivoId === centro.id
+                      ? "border-red-500 bg-red-950/20"
+                      : "border-slate-800 bg-slate-950/60"
+                  }`}
                 >
                   <div className="flex items-start gap-2.5">
                     {urgenciaAlta && (
@@ -212,7 +265,10 @@ export default function HomeApp() {
                         </a>
                       )}
                       {(centro.necesidades ?? []).length > 0 && (
-                        <ul className="mt-2 space-y-2 border-t border-slate-800 pt-2">
+                        <ul
+                          className="mt-2 space-y-2 border-t border-slate-800 pt-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {(centro.necesidades ?? []).map((nec) => (
                             <NecesidadVotos
                               key={nec.id}
@@ -222,6 +278,16 @@ export default function HomeApp() {
                           ))}
                         </ul>
                       )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abrirReporteCentro(centro);
+                        }}
+                        className="mt-3 w-full rounded-lg border border-red-800/60 py-2 text-xs font-semibold text-red-300 active:bg-red-950/40"
+                      >
+                        + Reportar necesidad
+                      </button>
                     </div>
                   </div>
                 </li>
@@ -365,9 +431,22 @@ export default function HomeApp() {
           <Map
             active={mapActive}
             centros={centros}
+            centroActivoId={centroActivoId}
+            onCentroClick={setCentroSheet}
             onRegistrarCentro={onRegistrarCentro}
             className="h-full"
           />
+          {mapActive && (
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-[900] bg-gradient-to-b from-slate-950/95 to-transparent px-3 pb-8 pt-2 lg:hidden">
+              <div className="pointer-events-auto">
+                <CentroChips
+                  centros={centros}
+                  activoId={centroActivoId}
+                  onSeleccionar={setCentroActivoId}
+                />
+              </div>
+            </div>
+          )}
           {mapActive && <LiveChatOverlay showNavOffset={!isDesktop} />}
         </div>
 
@@ -423,6 +502,13 @@ export default function HomeApp() {
           })}
         </nav>
       )}
+
+      <CentroAccionSheet
+        centro={centroSheet}
+        onCerrar={() => setCentroSheet(null)}
+        onReportar={abrirReporteCentro}
+        onVerLista={verCentroEnLista}
+      />
     </div>
   );
 }

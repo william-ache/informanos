@@ -6,6 +6,11 @@ import { fetcher } from "@/lib/fetcher";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { formatFechaHumana } from "@/lib/formatFecha";
+import {
+  guardarChatAutor,
+  limpiarChatAutor,
+  obtenerChatAutor,
+} from "@/lib/chat-autor";
 import type { ChatMensaje } from "@/types/database";
 
 interface ChatResponse {
@@ -24,6 +29,7 @@ export default function StreamingChat({
   hideHeader = false,
 }: StreamingChatProps) {
   const [autor, setAutor] = useState("");
+  const [editandoNombre, setEditandoNombre] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +46,12 @@ export default function StreamingChat({
   );
 
   const mensajes = data?.mensajes ?? [];
+  const nombreGuardado = autor.trim().length > 0 && !editandoNombre;
+
+  useEffect(() => {
+    const guardado = obtenerChatAutor();
+    if (guardado) setAutor(guardado);
+  }, []);
 
   useEffect(() => {
     listaRef.current?.scrollTo({
@@ -49,8 +61,13 @@ export default function StreamingChat({
 
   async function enviarMensaje(event: React.FormEvent) {
     event.preventDefault();
+    const nombre = autor.trim();
+    if (!nombre) return;
+
     setEnviando(true);
     setError(null);
+    guardarChatAutor(nombre);
+    setEditandoNombre(false);
 
     let latitud: number | null = null;
     let longitud: number | null = null;
@@ -75,7 +92,7 @@ export default function StreamingChat({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          autor: autor.trim(),
+          autor: nombre,
           mensaje: mensaje.trim(),
           latitud,
           longitud,
@@ -107,7 +124,6 @@ export default function StreamingChat({
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">
             Chat en vivo
           </p>
-          <p className="text-xs text-slate-500">Actualización cada 2 s</p>
         </header>
       )}
 
@@ -138,24 +154,68 @@ export default function StreamingChat({
               </time>
             </div>
             <p className="mt-1 text-sm leading-relaxed text-slate-300">{msg.mensaje}</p>
-            {msg.latitud !== null && msg.longitud !== null && (
-              <p className="mt-1 text-xs text-slate-500">
-                📍 {msg.latitud.toFixed(4)}, {msg.longitud.toFixed(4)}
-              </p>
-            )}
           </article>
         ))}
       </div>
 
       <form onSubmit={enviarMensaje} className="border-t border-slate-800 bg-slate-950 p-3 pb-safe">
-        <input
-          required
-          type="text"
-          placeholder="Tu nombre"
-          value={autor}
-          onChange={(e) => setAutor(e.target.value)}
-          className="mb-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base outline-none focus:border-amber-500"
-        />
+        {nombreGuardado ? (
+          <div className="mb-2 flex items-center justify-between gap-2 text-sm text-slate-400">
+            <span>
+              Como <strong className="text-slate-200">{autor}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditandoNombre(true)}
+              className="text-xs text-amber-400 underline"
+            >
+              Cambiar
+            </button>
+          </div>
+        ) : (
+          <input
+            required
+            type="text"
+            placeholder="Tu nombre"
+            value={autor}
+            onChange={(e) => setAutor(e.target.value)}
+            className="mb-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base outline-none focus:border-amber-500"
+          />
+        )}
+
+        {editandoNombre && nombreGuardado && (
+          <div className="mb-2 flex gap-2">
+            <input
+              autoFocus
+              type="text"
+              value={autor}
+              onChange={(e) => setAutor(e.target.value)}
+              className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-amber-500"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setAutor(obtenerChatAutor());
+                setEditandoNombre(false);
+              }}
+              className="rounded-xl border border-slate-700 px-3 py-2 text-xs"
+            >
+              OK
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                limpiarChatAutor();
+                setAutor("");
+                setEditandoNombre(false);
+              }}
+              className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-red-400"
+            >
+              Borrar
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <input
             required
@@ -167,7 +227,7 @@ export default function StreamingChat({
           />
           <button
             type="submit"
-            disabled={enviando}
+            disabled={enviando || !autor.trim()}
             className="shrink-0 rounded-xl bg-amber-600 px-5 py-3 text-base font-bold text-white active:bg-amber-500 disabled:opacity-50"
           >
             {enviando ? "…" : "→"}

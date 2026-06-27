@@ -8,7 +8,7 @@ Plataforma de emergencia para el **Estado Aragua, Venezuela**. Permite visualiza
 - **Centros de acopio**: registro con clic en mapa, listado y detalle de necesidades
 - **Chat en tiempo real** (polling) con mensajes flotantes sobre el mapa
 - **Reporte de necesidades** por centro con niveles de urgencia
-- **Presencia informativa**: usuarios en línea e IPs únicas (hash SHA-256, sin almacenar IP en texto plano)
+- **Presencia informativa**: usuarios en línea (heartbeat cada 15 s)
 - **Mobile-first**: navegación inferior, diseño adaptable y safe areas
 
 ## Stack

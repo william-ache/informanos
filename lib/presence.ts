@@ -29,13 +29,6 @@ export async function registrarPresencia(
      ON DUPLICATE KEY UPDATE ip_hash = VALUES(ip_hash), ultimo_ping = NOW()`,
     [sessionId, ipHash],
   );
-
-  await pool.execute(
-    `INSERT INTO visitas_ip (ip_hash, visitas)
-     VALUES (?, 1)
-     ON DUPLICATE KEY UPDATE visitas = visitas + 1, ultima_visita = NOW()`,
-    [ipHash],
-  );
 }
 
 interface CountRow extends RowDataPacket {
@@ -44,7 +37,6 @@ interface CountRow extends RowDataPacket {
 
 export async function obtenerEstadisticasPresencia(): Promise<{
   enLinea: number;
-  ipsUnicas: number;
 }> {
   await pool.query(
     `DELETE FROM presencia_sesiones
@@ -56,12 +48,7 @@ export async function obtenerEstadisticasPresencia(): Promise<{
     `SELECT COUNT(*) AS total FROM presencia_sesiones`,
   );
 
-  const [ips] = await pool.query<CountRow[]>(
-    `SELECT COUNT(*) AS total FROM visitas_ip`,
-  );
-
   return {
     enLinea: activos[0]?.total ?? 0,
-    ipsUnicas: ips[0]?.total ?? 0,
   };
 }

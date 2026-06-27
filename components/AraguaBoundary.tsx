@@ -1,6 +1,6 @@
 "use client";
 
-import { Polygon, Tooltip } from "react-leaflet";
+import { Polygon } from "react-leaflet";
 import { ARAGUA_POLYGON } from "@/lib/aragua-boundary";
 
 export default function AraguaBoundary() {
@@ -13,11 +13,8 @@ export default function AraguaBoundary() {
         fillColor: "#ef4444",
         fillOpacity: 0.15,
         dashArray: "10 6",
+        interactive: false,
       }}
-    >
-      <Tooltip sticky direction="center" className="font-semibold">
-        Estado Aragua
-      </Tooltip>
-    </Polygon>
+    />
   );
 }
