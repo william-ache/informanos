@@ -31,10 +31,6 @@ const CentroChips = dynamic(() => import("@/components/CentroChips"), {
   ssr: false,
 });
 
-const CentroAccionSheet = dynamic(() => import("@/components/CentroAccionSheet"), {
-  ssr: false,
-});
-
 const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
   ssr: false,
 });
@@ -73,7 +69,6 @@ export default function HomeApp() {
   const [ultimoSync, setUltimoSync] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
-  const [centroSheet, setCentroSheet] = useState<CentroAcopio | null>(null);
   const [agregarMenuOpen, setAgregarMenuOpen] = useState(false);
   const pageVisible = usePageVisible();
 
@@ -122,13 +117,11 @@ export default function HomeApp() {
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
     setNecesidadForm((prev) => ({ ...prev, centro_id: centro.id }));
-    setCentroSheet(null);
     setTab("reportar");
   }, []);
 
   const verCentroEnLista = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
-    setCentroSheet(null);
     setTab("centros");
   }, []);
 
@@ -450,7 +443,8 @@ export default function HomeApp() {
             active={mapActive}
             centros={centros}
             centroActivoId={centroActivoId}
-            onCentroClick={setCentroSheet}
+            onReportarCentro={abrirReporteCentro}
+            onVerCentroLista={verCentroEnLista}
             onRegistrarCentro={onRegistrarCentro}
             hideAgregarButton={!isDesktop}
             agregarMenuOpen={agregarMenuOpen}
@@ -512,13 +506,6 @@ export default function HomeApp() {
           })}
         </nav>
       )}
-
-      <CentroAccionSheet
-        centro={centroSheet}
-        onCerrar={() => setCentroSheet(null)}
-        onReportar={abrirReporteCentro}
-        onVerLista={verCentroEnLista}
-      />
     </div>
   );
 }

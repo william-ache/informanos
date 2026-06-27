@@ -38,7 +38,8 @@ const emptyForm = (): FormState => ({
 interface MapProps {
   centros: CentroAcopio[];
   centroActivoId?: string | null;
-  onCentroClick?: (centro: CentroAcopio) => void;
+  onReportarCentro?: (centro: CentroAcopio) => void;
+  onVerCentroLista?: (centro: CentroAcopio) => void;
   onRegistrarCentro?: (centro: NuevoCentroAcopio) => void | Promise<void>;
   className?: string;
   active?: boolean;
@@ -97,7 +98,8 @@ function MapFlyTo({
 function MapView({
   centros,
   centroActivoId,
-  onCentroClick,
+  onReportarCentro,
+  onVerCentroLista,
   onRegistrarCentro,
   className = "",
   active = true,
@@ -256,7 +258,8 @@ function MapView({
         <CentroMarkers
           centros={centros}
           centroActivoId={centroActivoId}
-          onCentroClick={onCentroClick}
+          onReportar={onReportarCentro}
+          onVerLista={onVerCentroLista}
         />
 
         {coords && modalAbierto && (
