@@ -11,9 +11,14 @@ const ConsoleCredit = dynamic(() => import("@/components/ConsoleCredit"), {
   ssr: false,
 });
 
+const PwaRegistrar = dynamic(() => import("@/components/PwaRegistrar"), {
+  ssr: false,
+});
+
 export default function ClientShell() {
   return (
     <>
+      <PwaRegistrar />
       <ConsoleCredit />
       <HomeApp />
     </>

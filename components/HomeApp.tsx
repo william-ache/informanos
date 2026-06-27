@@ -18,6 +18,13 @@ import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
 import { usePrivacidad } from "@/hooks/use-privacidad";
+import { usePwaInstall } from "@/hooks/use-pwa-install";
+import {
+  marcarInstalacionDescartada,
+  marcarInstalacionPendiente,
+  consumirInstalacionPendiente,
+} from "@/lib/pwa-install";
+import { obtenerConsentimientoPrivacidad, PRIVACIDAD_EVENT } from "@/lib/privacidad";
 import type { CentroAcopio, NuevoCentroAcopio, UrgenciaNivel } from "@/types/database";
 
 const Map = dynamic(() => import("@/components/Map"), {
@@ -65,6 +72,10 @@ const ReportarErrorModal = dynamic(
 );
 
 const AdminPanel = dynamic(() => import("@/components/AdminPanel"), {
+  ssr: false,
+});
+
+const InstalarAppModal = dynamic(() => import("@/components/InstalarAppModal"), {
   ssr: false,
 });
 
@@ -117,9 +128,11 @@ export default function HomeApp() {
     filtroPoblacionVacio,
   );
   const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
+  const [instalarAppOpen, setInstalarAppOpen] = useState(false);
   const pageVisible = usePageVisible();
   const inputActivo = useInputActivo();
   const { pendiente: privacidadPendiente } = usePrivacidad();
+  const pwaInstall = usePwaInstall();
 
   const { data, error, isLoading } = useSWR<CentrosResponse>(
     CENTROS_KEY,
@@ -147,6 +160,25 @@ export default function HomeApp() {
   useEffect(() => {
     if (tab === "errores") setErrorModalOpen(true);
   }, [tab]);
+
+  useEffect(() => {
+    function intentarMostrarInstalar() {
+      if (!pwaInstall.puedeOfrecer) return;
+      if (!consumirInstalacionPendiente()) return;
+      window.setTimeout(() => setInstalarAppOpen(true), 450);
+    }
+
+    function onPrivacidadCambiada() {
+      if (obtenerConsentimientoPrivacidad() !== "accepted") return;
+      marcarInstalacionPendiente();
+      intentarMostrarInstalar();
+    }
+
+    window.addEventListener(PRIVACIDAD_EVENT, onPrivacidadCambiada);
+    intentarMostrarInstalar();
+
+    return () => window.removeEventListener(PRIVACIDAD_EVENT, onPrivacidadCambiada);
+  }, [pwaInstall.puedeOfrecer]);
 
   const centrosFiltrados = useMemo(() => {
     let list = centros;
@@ -533,6 +565,15 @@ export default function HomeApp() {
       </main>
 
       <PoliticaPrivacidadModal open={privacidadPendiente} />
+      <InstalarAppModal
+        open={instalarAppOpen && !privacidadPendiente}
+        esIos={pwaInstall.esIos}
+        onInstalar={pwaInstall.instalar}
+        onClose={() => {
+          setInstalarAppOpen(false);
+          marcarInstalacionDescartada();
+        }}
+      />
       <ReportarErrorModal
         open={errorModalOpen}
         onClose={() => {
