@@ -33,19 +33,28 @@ export default function CentroAccionSheet({
           <p className="text-lg font-bold">{centro.nombre}</p>
           <p className="mt-1 text-sm text-slate-400">{centro.municipio}</p>
           {centro.contacto && (
-            <a
-              href={`tel:${centro.contacto.replace(/\s/g, "")}`}
-              className="mt-2 inline-block text-sm text-blue-400 underline"
-            >
-              {centro.contacto}
-            </a>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {centro.contacto.split(",").map((tel) => {
+                const limpio = tel.trim();
+                if (!limpio) return null;
+                return (
+                  <a
+                    key={limpio}
+                    href={`tel:${limpio.replace(/\s/g, "")}`}
+                    className="text-sm text-blue-400 underline"
+                  >
+                    {limpio}
+                  </a>
+                );
+              })}
+            </div>
           )}
 
           <div className="mt-5 flex flex-col gap-2">
             <button
               type="button"
               onClick={() =>
-                abrirEnGoogleMaps(centro.latitud, centro.longitud, centro.nombre)
+                abrirEnGoogleMaps(centro.latitud, centro.longitud)
               }
               className="w-full rounded-xl bg-blue-600 py-3.5 text-base font-bold text-white active:bg-blue-500"
             >

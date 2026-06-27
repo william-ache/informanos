@@ -46,21 +46,10 @@ export function parseCoordenadasManuales(
   return parsePair(latTexto.trim(), lngTexto.trim());
 }
 
-export function urlGoogleMaps(
-  lat: number,
-  lng: number,
-  etiqueta?: string,
-): string {
-  const query = etiqueta?.trim()
-    ? `${encodeURIComponent(etiqueta)}@${lat},${lng}`
-    : `${lat},${lng}`;
-  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+export function urlGoogleMaps(lat: number, lng: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 
-export function abrirEnGoogleMaps(
-  lat: number,
-  lng: number,
-  etiqueta?: string,
-): void {
-  window.open(urlGoogleMaps(lat, lng, etiqueta), "_blank", "noopener,noreferrer");
+export function abrirEnGoogleMaps(lat: number, lng: number): void {
+  window.open(urlGoogleMaps(lat, lng), "_blank", "noopener,noreferrer");
 }

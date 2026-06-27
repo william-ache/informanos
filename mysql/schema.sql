@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS centros_acopio (
   direccion  VARCHAR(500) NULL,
   latitud    DECIMAL(10, 8) NOT NULL,
   longitud   DECIMAL(10, 8) NOT NULL,
-  contacto   VARCHAR(120) NULL,
+  contacto   VARCHAR(500) NULL,
   creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

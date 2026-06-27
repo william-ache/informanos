@@ -56,6 +56,14 @@ export async function ensureSchema(): Promise<void> {
         }
       }
 
+      try {
+        await pool.query(
+          `ALTER TABLE centros_acopio MODIFY COLUMN contacto VARCHAR(500) NULL`,
+        );
+      } catch {
+        // ignorar si ya aplicado
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

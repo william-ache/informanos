@@ -33,8 +33,7 @@ function CentroMarkersInner({
             key={centro.id}
             position={[centro.latitud, centro.longitud]}
             eventHandlers={{
-              click: () =>
-                abrirEnGoogleMaps(centro.latitud, centro.longitud, centro.nombre),
+              click: () => onCentroClick?.(centro),
             }}
             opacity={centroActivoId && !activo ? 0.45 : 1}
           >
@@ -73,22 +72,12 @@ function CentroMarkersInner({
                 <button
                   type="button"
                   onClick={() =>
-                    abrirEnGoogleMaps(centro.latitud, centro.longitud, centro.nombre)
+                    abrirEnGoogleMaps(centro.latitud, centro.longitud)
                   }
                   className="mt-3 w-full rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
                 >
                   Ver en Google Maps
                 </button>
-
-                {onCentroClick && (
-                  <button
-                    type="button"
-                    onClick={() => onCentroClick(centro)}
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
-                  >
-                    Gestionar este lugar
-                  </button>
-                )}
               </div>
             </Popup>
           </Marker>

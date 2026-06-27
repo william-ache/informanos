@@ -74,6 +74,7 @@ export default function HomeApp() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
   const [centroSheet, setCentroSheet] = useState<CentroAcopio | null>(null);
+  const [agregarMenuOpen, setAgregarMenuOpen] = useState(false);
   const pageVisible = usePageVisible();
 
   const { data, error, isLoading } = useSWR<CentrosResponse>(
@@ -420,6 +421,23 @@ export default function HomeApp() {
         </header>
       )}
 
+      {!isDesktop && tab === "mapa" && (
+        <div className="shrink-0 space-y-2 border-b border-slate-800 bg-slate-900 px-3 py-2">
+          <CentroChips
+            centros={centros}
+            activoId={centroActivoId}
+            onSeleccionar={setCentroActivoId}
+          />
+          <button
+            type="button"
+            onClick={() => setAgregarMenuOpen(true)}
+            className="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white active:bg-blue-600"
+          >
+            + Agregar lugar de ayuda
+          </button>
+        </div>
+      )}
+
       <main className="relative min-h-0 flex-1 overflow-hidden">
         <div
           className={`absolute inset-0 ${
@@ -434,19 +452,11 @@ export default function HomeApp() {
             centroActivoId={centroActivoId}
             onCentroClick={setCentroSheet}
             onRegistrarCentro={onRegistrarCentro}
+            hideAgregarButton={!isDesktop}
+            agregarMenuOpen={agregarMenuOpen}
+            onAgregarMenuChange={setAgregarMenuOpen}
             className="h-full"
           />
-          {mapActive && (
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-[900] bg-gradient-to-b from-slate-950/95 to-transparent px-3 pb-8 pt-2 lg:hidden">
-              <div className="pointer-events-auto">
-                <CentroChips
-                  centros={centros}
-                  activoId={centroActivoId}
-                  onSeleccionar={setCentroActivoId}
-                />
-              </div>
-            </div>
-          )}
           {mapActive && <LiveChatOverlay showNavOffset={!isDesktop} />}
         </div>
 

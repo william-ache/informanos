@@ -13,6 +13,7 @@ import AraguaBoundary from "@/components/AraguaBoundary";
 import AgregarLugarSheet from "@/components/AgregarLugarSheet";
 import ModalPortal from "@/components/ModalPortal";
 import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
+import { detectarLugar } from "@/lib/geocoding";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import { configureLeafletIcons } from "@/lib/leaflet-icons";
 import "leaflet/dist/leaflet.css";
@@ -20,12 +21,19 @@ import "leaflet/dist/leaflet.css";
 const ARAGUA_CENTER: [number, number] = [10.25, -67.45];
 const INITIAL_ZOOM = 10;
 
-const emptyForm = {
+interface FormState {
+  nombre: string;
+  municipio: string;
+  direccion: string;
+  telefonos: string[];
+}
+
+const emptyForm = (): FormState => ({
   nombre: "",
   municipio: "",
   direccion: "",
-  contacto: "",
-};
+  telefonos: [""],
+});
 
 interface MapProps {
   centros: CentroAcopio[];
@@ -34,6 +42,9 @@ interface MapProps {
   onRegistrarCentro?: (centro: NuevoCentroAcopio) => void | Promise<void>;
   className?: string;
   active?: boolean;
+  hideAgregarButton?: boolean;
+  agregarMenuOpen?: boolean;
+  onAgregarMenuChange?: (open: boolean) => void;
 }
 
 function MapClickHandler({
@@ -90,15 +101,22 @@ function MapView({
   onRegistrarCentro,
   className = "",
   active = true,
+  hideAgregarButton = false,
+  agregarMenuOpen,
+  onAgregarMenuChange,
 }: MapProps) {
-  const [menuAgregar, setMenuAgregar] = useState(false);
+  const [menuInterno, setMenuInterno] = useState(false);
+  const menuAgregar = agregarMenuOpen ?? menuInterno;
+  const setMenuAgregar = onAgregarMenuChange ?? setMenuInterno;
+
   const [seleccionMapa, setSeleccionMapa] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     null,
   );
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const [enviando, setEnviando] = useState(false);
+  const [cargandoLugar, setCargandoLugar] = useState(false);
   const [alertaZona, setAlertaZona] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,7 +129,7 @@ function MapView({
     return () => window.clearTimeout(id);
   }, [alertaZona]);
 
-  function abrirFormulario(lat: number, lng: number) {
+  async function abrirFormulario(lat: number, lng: number) {
     if (!puntoEnAragua(lat, lng)) {
       setAlertaZona(MENSAJE_FUERA_ARAGUA);
       return;
@@ -119,23 +137,54 @@ function MapView({
 
     setAlertaZona(null);
     setCoords({ lat, lng });
-    setForm(emptyForm);
+    setForm(emptyForm());
     setModalAbierto(true);
     setSeleccionMapa(false);
+    setCargandoLugar(true);
+
+    const detectado = await detectarLugar(lat, lng);
+    if (detectado) {
+      setForm((prev) => ({
+        ...prev,
+        nombre: detectado.nombre,
+        municipio: detectado.municipio,
+        direccion: detectado.direccion,
+      }));
+    }
+    setCargandoLugar(false);
   }
 
   function handleMapClick(lat: number, lng: number) {
-    abrirFormulario(lat, lng);
+    void abrirFormulario(lat, lng);
   }
 
   function cerrarModal() {
     setModalAbierto(false);
     setCoords(null);
-    setForm(emptyForm);
+    setForm(emptyForm());
   }
 
   function cancelarSeleccionMapa() {
     setSeleccionMapa(false);
+  }
+
+  function actualizarTelefono(index: number, valor: string) {
+    setForm((prev) => {
+      const telefonos = [...prev.telefonos];
+      telefonos[index] = valor;
+      return { ...prev, telefonos };
+    });
+  }
+
+  function agregarTelefono() {
+    setForm((prev) => ({ ...prev, telefonos: [...prev.telefonos, ""] }));
+  }
+
+  function quitarTelefono(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      telefonos: prev.telefonos.filter((_, i) => i !== index),
+    }));
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -148,12 +197,16 @@ function MapView({
       return;
     }
 
+    const contacto =
+      form.telefonos.map((t) => t.trim()).filter(Boolean).join(", ") || null;
+
     setEnviando(true);
     try {
       await onRegistrarCentro({
-        ...form,
+        nombre: form.nombre,
+        municipio: form.municipio,
         direccion: form.direccion || null,
-        contacto: form.contacto || null,
+        contacto,
         latitud: coords.lat,
         longitud: coords.lng,
       });
@@ -211,35 +264,37 @@ function MapView({
         )}
       </MapContainer>
 
-      <div className="pointer-events-none absolute left-3 top-14 z-[1000] rounded-lg border border-red-500/50 bg-red-950/85 px-3 py-1.5 text-xs font-semibold text-red-200 shadow lg:top-16">
+      <div className="pointer-events-none absolute left-3 top-3 z-[1000] rounded-lg border border-red-500/50 bg-red-950/85 px-3 py-1.5 text-xs font-semibold text-red-200 shadow lg:top-4">
         Zona activa: Estado Aragua
       </div>
 
       {alertaZona && (
-        <div className="absolute left-3 right-3 top-[4.5rem] z-[1001] rounded-xl border border-amber-500 bg-amber-950/95 px-4 py-3 text-sm font-medium text-amber-100 shadow-lg lg:top-[4.75rem] lg:max-w-md">
+        <div className="absolute left-3 right-3 top-12 z-[1001] rounded-xl border border-amber-500 bg-amber-950/95 px-4 py-3 text-sm font-medium text-amber-100 shadow-lg lg:top-14 lg:max-w-md">
           {alertaZona}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => {
-          if (seleccionMapa) {
-            cancelarSeleccionMapa();
-            return;
-          }
-          if (modalAbierto) cerrarModal();
-          setMenuAgregar(true);
-        }}
-        className={`absolute right-3 top-3 z-[1000] max-w-[11rem] rounded-xl px-3 py-3 text-xs font-bold leading-tight text-white shadow-lg active:scale-95 sm:max-w-none sm:px-4 sm:text-sm lg:top-4 lg:right-4 ${
-          seleccionMapa ? "bg-red-600" : "bg-blue-700"
-        }`}
-      >
-        {seleccionMapa ? "Cancelar" : "+ Agregar lugar de ayuda"}
-      </button>
+      {!hideAgregarButton && (
+        <button
+          type="button"
+          onClick={() => {
+            if (seleccionMapa) {
+              cancelarSeleccionMapa();
+              return;
+            }
+            if (modalAbierto) cerrarModal();
+            setMenuAgregar(true);
+          }}
+          className={`absolute bottom-4 right-3 z-[1000] rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg active:scale-95 lg:bottom-6 lg:right-4 ${
+            seleccionMapa ? "bg-red-600" : "bg-blue-700"
+          }`}
+        >
+          {seleccionMapa ? "Cancelar" : "+ Agregar lugar"}
+        </button>
+      )}
 
       {seleccionMapa && !modalAbierto && (
-        <div className="pointer-events-none absolute bottom-4 left-3 right-3 z-[1000] mx-auto max-w-sm rounded-xl bg-black/80 px-4 py-2.5 text-center text-sm text-white lg:bottom-6">
+        <div className="pointer-events-none absolute bottom-16 left-3 right-3 z-[1000] mx-auto max-w-sm rounded-xl bg-black/80 px-4 py-2.5 text-center text-sm text-white lg:bottom-20">
           Toca el mapa dentro de la zona roja (Estado Aragua)
         </div>
       )}
@@ -253,7 +308,7 @@ function MapView({
         }}
         onCoordsListas={({ lat, lng }) => {
           setMenuAgregar(false);
-          abrirFormulario(lat, lng);
+          void abrirFormulario(lat, lng);
         }}
       />
 
@@ -273,28 +328,80 @@ function MapView({
               <p className="mt-1 text-sm text-slate-500">
                 {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
+              {cargandoLugar && (
+                <p className="mt-2 text-xs text-blue-600">
+                  Detectando nombre y dirección…
+                </p>
+              )}
 
-              {(
-                [
-                  ["nombre", "Nombre del lugar *", "text"],
-                  ["municipio", "Municipio *", "text"],
-                  ["direccion", "Dirección", "text"],
-                  ["contacto", "Contacto", "tel"],
-                ] as const
-              ).map(([key, label, type]) => (
-                <label key={key} className="mt-3 block text-sm font-medium">
-                  {label}
-                  <input
-                    type={type}
-                    required={key === "nombre" || key === "municipio"}
-                    value={form[key]}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, [key]: e.target.value }))
-                    }
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </label>
-              ))}
+              <label className="mt-3 block text-sm font-medium">
+                Nombre del lugar *
+                <input
+                  type="text"
+                  required
+                  value={form.nombre}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, nombre: e.target.value }))
+                  }
+                  className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </label>
+
+              <label className="mt-3 block text-sm font-medium">
+                Municipio *
+                <input
+                  type="text"
+                  required
+                  value={form.municipio}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, municipio: e.target.value }))
+                  }
+                  className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </label>
+
+              <label className="mt-3 block text-sm font-medium">
+                Dirección
+                <input
+                  type="text"
+                  value={form.direccion}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, direccion: e.target.value }))
+                  }
+                  className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </label>
+
+              <div className="mt-3">
+                <p className="text-sm font-medium">Teléfonos de contacto</p>
+                {form.telefonos.map((tel, index) => (
+                  <div key={index} className="mt-2 flex gap-2">
+                    <input
+                      type="tel"
+                      placeholder="+58 414-0000000"
+                      value={tel}
+                      onChange={(e) => actualizarTelefono(index, e.target.value)}
+                      className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                    />
+                    {form.telefonos.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => quitarTelefono(index)}
+                        className="shrink-0 rounded-xl border border-slate-300 px-3 text-sm text-red-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={agregarTelefono}
+                  className="mt-2 text-sm font-medium text-blue-600"
+                >
+                  + Agregar otro número
+                </button>
+              </div>
 
               <div className="mt-5 flex gap-3">
                 <button
@@ -306,7 +413,7 @@ function MapView({
                 </button>
                 <button
                   type="submit"
-                  disabled={enviando || !onRegistrarCentro}
+                  disabled={enviando || !onRegistrarCentro || cargandoLugar}
                   className="flex-1 rounded-xl bg-emerald-600 py-3 text-base font-semibold text-white active:bg-emerald-500 disabled:opacity-50"
                 >
                   {enviando ? "Guardando…" : "Guardar"}
