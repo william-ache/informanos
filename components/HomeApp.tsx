@@ -27,7 +27,7 @@ const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
   ssr: false,
 });
 
-const CentroChips = dynamic(() => import("@/components/CentroChips"), {
+const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
   ssr: false,
 });
 
@@ -62,7 +62,7 @@ interface CentrosResponse {
 
 export default function HomeApp() {
   const [tab, setTab] = useState<Tab>("mapa");
-  const [busqueda, setBusqueda] = useState("");
+  const [textoBusqueda, setTextoBusqueda] = useState("");
   const [necesidadForm, setNecesidadForm] = useState(emptyNecesidad);
   const [guardandoNecesidad, setGuardandoNecesidad] = useState(false);
   const [accionError, setAccionError] = useState<string | null>(null);
@@ -101,18 +101,19 @@ export default function HomeApp() {
     if (centroActivoId) {
       list = list.filter((c) => c.id === centroActivoId);
     } else {
-      const q = busqueda.trim().toLowerCase();
+      const q = textoBusqueda.trim().toLowerCase();
       if (q) {
         list = list.filter(
           (c) =>
             c.municipio.toLowerCase().includes(q) ||
-            c.nombre.toLowerCase().includes(q),
+            c.nombre.toLowerCase().includes(q) ||
+            (c.direccion?.toLowerCase().includes(q) ?? false),
         );
       }
     }
 
     return list;
-  }, [centros, busqueda, centroActivoId]);
+  }, [centros, textoBusqueda, centroActivoId]);
 
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
@@ -190,29 +191,13 @@ export default function HomeApp() {
     return (
       <>
         <div className={compact ? "px-4 pt-3" : "border-b border-slate-800 p-4"}>
-          {!compact && (
-            <label className="text-xs font-medium uppercase text-slate-400">
-              Buscar centro
-            </label>
-          )}
-          <input
-            type="search"
-            value={busqueda}
-            onChange={(e) => {
-              setBusqueda(e.target.value);
-              if (e.target.value.trim()) setCentroActivoId(null);
-            }}
-            placeholder="Nombre o municipio…"
-            className={`${inputClass} ${compact ? "" : "mt-2"}`}
-          />
-          <CentroChips
+          <CentroBuscador
             centros={centros}
             activoId={centroActivoId}
-            onSeleccionar={(id) => {
-              setCentroActivoId(id);
-              if (id) setBusqueda("");
-            }}
-            className={compact ? "mt-3" : "mt-3"}
+            onSeleccionar={setCentroActivoId}
+            onQueryChange={setTextoBusqueda}
+            placeholder="Buscar por nombre o municipio…"
+            className={compact ? "" : "mt-0"}
           />
         </div>
 
@@ -416,10 +401,11 @@ export default function HomeApp() {
 
       {!isDesktop && tab === "mapa" && (
         <div className="shrink-0 space-y-2 border-b border-slate-800 bg-slate-900 px-3 py-2">
-          <CentroChips
+          <CentroBuscador
             centros={centros}
             activoId={centroActivoId}
             onSeleccionar={setCentroActivoId}
+            placeholder="Buscar lugar…"
           />
           <button
             type="button"
