@@ -28,13 +28,20 @@ export interface CentroRow extends RowDataPacket {
   donacion_transporte: number | null;
   estado_operativo: string | null;
   finalizado_en: string | null;
+  solicita_transporte: number | null;
+  solicita_medico: number | null;
+  solicita_voluntarios: number | null;
+  solicita_psicologo: number | null;
+  solicita_veterinario: number | null;
   creado_en: string;
 }
 
 export const CENTRO_SELECT = `id, nombre, municipio, direccion, latitud, longitud, contacto,
   aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales,
   tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte,
-  estado_operativo, finalizado_en, creado_en`;
+  estado_operativo, finalizado_en,
+  solicita_transporte, solicita_medico, solicita_voluntarios, solicita_psicologo, solicita_veterinario,
+  creado_en`;
 
 export function mapCentro(
   row: CentroRow,
@@ -69,6 +76,11 @@ export function mapCentro(
       ? "finalizado"
       : "activo") as EstadoOperativoCentro,
     finalizado_en: row.finalizado_en,
+    solicita_transporte: Boolean(row.solicita_transporte),
+    solicita_medico: Boolean(row.solicita_medico),
+    solicita_voluntarios: Boolean(row.solicita_voluntarios),
+    solicita_psicologo: Boolean(row.solicita_psicologo),
+    solicita_veterinario: Boolean(row.solicita_veterinario),
     creado_en: row.creado_en,
     necesidades,
     propuesta_tipo,

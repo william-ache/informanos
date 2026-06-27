@@ -10,6 +10,7 @@ import {
   textoReglasVotacion,
 } from "@/lib/propuesta-tipo";
 import { TIPO_LUGAR_OPCIONES } from "@/lib/tipo-lugar";
+import { AYUDAS_SOLICITADAS, ayudaDesdeCentro, type AyudaSolicitada } from "@/lib/ayuda-solicitada";
 import { resolverVotoPresencial } from "@/lib/voto-presencial";
 import type {
   AccionPropuestaNecesidad,
@@ -51,6 +52,7 @@ interface FormState {
   telefonos: string[];
   tipoLugar: TipoLugar;
   insumos: InsumoForm[];
+  ayuda: AyudaSolicitada;
 }
 
 type PasoVotacion = "tipo" | "insumos" | null;
@@ -167,6 +169,7 @@ export default function CentroEditarModal({
       telefonos: telefonosDesdeCentro(centro.contacto),
       tipoLugar: centro.tipo_lugar ?? "acopio",
       insumos,
+      ayuda: ayudaDesdeCentro(centro),
     });
     setError(null);
     setPasoVotacion(null);
@@ -280,6 +283,7 @@ export default function CentroEditarModal({
           aprox_personas: parsePoblacionInput(form.aproxPersonas),
           aprox_ancianos: parsePoblacionInput(form.aproxAncianos),
           aprox_animales: parsePoblacionInput(form.aproxAnimales),
+          ...form.ayuda,
         }),
       });
 
@@ -528,6 +532,40 @@ export default function CentroEditarModal({
                 + Agregar número
               </button>
             </div>
+
+            <fieldset className="mt-4">
+              <legend className="text-sm font-medium">Ayuda solicitada</legend>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Marca lo que necesita el lugar. Se guarda al instante y avisa en el chat.
+              </p>
+              <div className="mt-2 space-y-2">
+                {AYUDAS_SOLICITADAS.map(({ key, label, emoji }) => (
+                  <label
+                    key={key}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.ayuda[key]}
+                      onChange={(e) =>
+                        setForm((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                ayuda: { ...prev.ayuda, [key]: e.target.checked },
+                              }
+                            : prev,
+                        )
+                      }
+                      className="h-4 w-4"
+                    />
+                    <span>
+                      {emoji} {label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
             {mostrarInsumosEnCentro(centro) && (
               <fieldset className="mt-4">

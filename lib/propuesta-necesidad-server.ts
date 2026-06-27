@@ -3,6 +3,7 @@ import type { RowDataPacket } from "mysql2";
 import type mysql from "mysql2/promise";
 import pool from "@/lib/db";
 import { publicarEnChat, obtenerNombreCentro } from "@/lib/chat-actividad";
+import { aplicarUrgenciaCentroPorNecesidad } from "@/lib/centro-urgencia-auto";
 import { MIN_VOTOS_PROPUESTA, MINUTOS_PROPUESTA } from "@/lib/propuesta-tipo";
 import type {
   AccionPropuestaNecesidad,
@@ -94,6 +95,8 @@ async function finalizarPropuesta(
         [prop.elemento, prop.cantidad_solicitada, prop.urgencia, prop.necesidad_id],
       );
     }
+
+    await aplicarUrgenciaCentroPorNecesidad(prop.centro_id, prop.urgencia);
 
     const nombreCentro =
       (await obtenerNombreCentro(prop.centro_id)) ?? "un lugar";

@@ -207,6 +207,22 @@ export async function ensureSchema(): Promise<void> {
         }
       }
 
+      const ayudaAlters = [
+        `ALTER TABLE centros_acopio ADD COLUMN solicita_transporte TINYINT(1) NOT NULL DEFAULT 0 AFTER finalizado_en`,
+        `ALTER TABLE centros_acopio ADD COLUMN solicita_medico TINYINT(1) NOT NULL DEFAULT 0 AFTER solicita_transporte`,
+        `ALTER TABLE centros_acopio ADD COLUMN solicita_voluntarios TINYINT(1) NOT NULL DEFAULT 0 AFTER solicita_medico`,
+        `ALTER TABLE centros_acopio ADD COLUMN solicita_psicologo TINYINT(1) NOT NULL DEFAULT 0 AFTER solicita_voluntarios`,
+        `ALTER TABLE centros_acopio ADD COLUMN solicita_veterinario TINYINT(1) NOT NULL DEFAULT 0 AFTER solicita_psicologo`,
+      ];
+      for (const sql of ayudaAlters) {
+        try {
+          await pool.query(sql);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (!message.includes("Duplicate column")) throw error;
+        }
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS propuestas_finalizar (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

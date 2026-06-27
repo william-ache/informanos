@@ -41,6 +41,10 @@ const CentroVotoOperativo = dynamic(
   { ssr: false },
 );
 
+const AyudaSolicitadaInfo = dynamic(() => import("@/components/AyudaSolicitadaInfo"), {
+  ssr: false,
+});
+
 import type { VistaCentros } from "@/lib/centro-operativo";
 
 interface CentrosListProps {
@@ -203,6 +207,7 @@ export default function CentrosList({
                         {centro.contacto}
                       </a>
                     )}
+                    <AyudaSolicitadaInfo centro={centro} />
                     {(centro.necesidades ?? []).length > 0 && (
                       <ul
                         className="mt-2 space-y-2 border-t border-slate-800 pt-2"

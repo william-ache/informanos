@@ -72,6 +72,11 @@ export interface CentroAcopio {
   donacion_necesita: string | null;
   donacion_destino: string | null;
   donacion_transporte: boolean | null;
+  solicita_transporte: boolean;
+  solicita_medico: boolean;
+  solicita_voluntarios: boolean;
+  solicita_psicologo: boolean;
+  solicita_veterinario: boolean;
   creado_en: string;
   estado_operativo: EstadoOperativoCentro;
   finalizado_en: string | null;
