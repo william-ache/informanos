@@ -651,14 +651,26 @@ export default function HomeApp() {
       </main>
 
       {!isDesktop && !flotantesOcultos && (
-        <button
-          type="button"
-          onClick={() => setErrorModalOpen(true)}
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-amber-700/60 bg-amber-950/90 text-lg text-amber-200 shadow-lg backdrop-blur active:scale-95"
-          aria-label="Reportar error"
-        >
-          ⚠
-        </button>
+        <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 z-40 flex flex-col items-center gap-2">
+          {tab === "mapa" && (
+            <button
+              type="button"
+              onClick={() => setSolicitudAgregarCentro((n) => n + 1)}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold leading-none text-white shadow-lg active:scale-95"
+              aria-label="Agregar lugar en el centro del mapa"
+            >
+              +
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setErrorModalOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-700/60 bg-amber-950/90 text-lg text-amber-200 shadow-lg backdrop-blur active:scale-95"
+            aria-label="Reportar error"
+          >
+            ⚠
+          </button>
+        </div>
       )}
 
       <PoliticaPrivacidadModal open={privacidadPendiente} />
@@ -695,27 +707,14 @@ export default function HomeApp() {
                   : 0;
 
             return (
-              <div key={item.id} className="relative flex flex-1">
-                {item.id === "reportar" && tab === "mapa" && !flotantesOcultos && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSolicitudAgregarCentro((n) => n + 1);
-                    }}
-                    className="absolute bottom-[calc(100%+0.35rem)] left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold leading-none text-white shadow-lg active:scale-95"
-                    aria-label="Agregar lugar en el centro del mapa"
-                  >
-                    +
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setTab(item.id)}
-                  className={`relative flex w-full flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition active:scale-95 ${
-                    active ? "text-red-400" : "text-slate-500"
-                  }`}
-                >
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition active:scale-95 ${
+                  active ? "text-red-400" : "text-slate-500"
+                }`}
+              >
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
                     active ? "bg-red-600 text-white" : "bg-slate-800 text-slate-400"
@@ -734,7 +733,6 @@ export default function HomeApp() {
                   </span>
                 )}
               </button>
-              </div>
             );
           })}
         </nav>
