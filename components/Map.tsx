@@ -367,7 +367,7 @@ function MapView({
 
         <MapResize active={active} />
         <MapZonaSync zona={zona} />
-        <ZoneBoundary />
+        <ZoneBoundary zona={zona} />
         {flyTarget && modalAbierto && (
           <MapFlyTo lat={flyTarget.lat} lng={flyTarget.lng} />
         )}
@@ -419,7 +419,7 @@ function MapView({
 
       {seleccionMapa && !modalAbierto && (
         <div className="pointer-events-none absolute bottom-16 left-3 right-3 z-[1000] mx-auto max-w-sm rounded-xl bg-black/80 px-4 py-2.5 text-center text-sm text-white lg:bottom-20">
-          Toca el mapa dentro de la zona roja ({zonaCfg.label})
+          Toca el mapa dentro de {zonaCfg.label}
         </div>
       )}
 
