@@ -6,6 +6,7 @@ import { fetcher } from "@/lib/fetcher";
 import { datosExtendidosPermitidos } from "@/lib/privacidad";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useInputActivo } from "@/hooks/use-input-activo";
 import { usePrivacidad } from "@/hooks/use-privacidad";
 
 const PRESENCE_KEY = "/api/presence";
@@ -41,6 +42,7 @@ async function enviarHeartbeat(): Promise<PresenceStats> {
 
 export default function PresenceStats() {
   const pageVisible = usePageVisible();
+  const inputActivo = useInputActivo();
   const { datosExtendidos } = usePrivacidad();
   const [conectado, setConectado] = useState(false);
 
@@ -49,12 +51,12 @@ export default function PresenceStats() {
     fetcher,
     {
       ...swrDefaults,
-      refreshInterval: pageVisible ? 10000 : 0,
+      refreshInterval: pageVisible && !inputActivo ? 10000 : 0,
     },
   );
 
   useEffect(() => {
-    if (!pageVisible || !datosExtendidos) return;
+    if (!pageVisible || !datosExtendidos || inputActivo) return;
 
     const ping = () => {
       enviarHeartbeat()
@@ -70,7 +72,7 @@ export default function PresenceStats() {
     ping();
     const id = window.setInterval(ping, HEARTBEAT_MS);
     return () => window.clearInterval(id);
-  }, [pageVisible, datosExtendidos]);
+  }, [pageVisible, datosExtendidos, inputActivo]);
 
   const enLinea = data?.enLinea ?? 0;
 

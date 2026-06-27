@@ -64,7 +64,9 @@ export default function CentroBuscador({
     <div className={`relative ${className}`}>
       <div className="relative">
         <input
-          type="search"
+          type="text"
+          autoComplete="off"
+          enterKeyHint="search"
           value={query}
           onChange={(e) => actualizarQuery(e.target.value)}
           onFocus={() => setAbierto(true)}

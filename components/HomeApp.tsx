@@ -7,18 +7,16 @@ import { fetcher } from "@/lib/fetcher";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import {
   elementoDesdeInsumo,
-  INSUMO_OPCIONES,
   insumoValido,
 } from "@/lib/insumos";
 import {
   cumpleFiltroPoblacion,
   filtroPoblacionVacio,
-  resumenPoblacion,
-  tienePoblacion,
   type FiltroPoblacion as FiltroPoblacionState,
 } from "@/lib/poblacion";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useInputActivo } from "@/hooks/use-input-activo";
 import { usePrivacidad } from "@/hooks/use-privacidad";
 import type { CentroAcopio, NuevoCentroAcopio, UrgenciaNivel } from "@/types/database";
 
@@ -36,15 +34,7 @@ const StreamingChat = dynamic(() => import("@/components/StreamingChat"), {
   loading: () => null,
 });
 
-const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
-  ssr: false,
-});
-
 const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
-  ssr: false,
-});
-
-const SearchableSelect = dynamic(() => import("@/components/SearchableSelect"), {
   ssr: false,
 });
 
@@ -53,6 +43,14 @@ const FiltroPoblacion = dynamic(() => import("@/components/FiltroPoblacion"), {
 });
 
 const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
+  ssr: false,
+});
+
+const ReportarForm = dynamic(() => import("@/components/ReportarForm"), {
+  ssr: false,
+});
+
+const CentrosList = dynamic(() => import("@/components/CentrosList"), {
   ssr: false,
 });
 
@@ -86,9 +84,6 @@ const emptyNecesidad = {
   urgencia: "media" as UrgenciaNivel,
 };
 
-const inputClass =
-  "w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base outline-none focus:border-red-500";
-
 interface CentrosResponse {
   centros: CentroAcopio[];
 }
@@ -108,6 +103,7 @@ export default function HomeApp() {
     filtroPoblacionVacio,
   );
   const pageVisible = usePageVisible();
+  const inputActivo = useInputActivo();
   const { pendiente: privacidadPendiente } = usePrivacidad();
 
   const { data, error, isLoading } = useSWR<CentrosResponse>(
@@ -115,7 +111,7 @@ export default function HomeApp() {
     fetcher,
     {
       ...swrDefaults,
-      refreshInterval: pageVisible ? 5000 : 0,
+      refreshInterval: pageVisible && !inputActivo ? 5000 : 0,
     },
   );
 
@@ -244,211 +240,6 @@ export default function HomeApp() {
   const showMobileChat = !isDesktop && tab === "chat";
   const mapActive = isDesktop || tab === "mapa";
 
-  function CentrosList({ compact = false }: { compact?: boolean }) {
-    return (
-      <>
-        <div className={compact ? "space-y-3 px-4 pt-3" : "space-y-3 border-b border-slate-800 p-4"}>
-          <CentroBuscador
-            centros={centros}
-            activoId={centroActivoId}
-            onSeleccionar={setCentroActivoId}
-            onQueryChange={setTextoBusqueda}
-            placeholder="Buscar por nombre o municipio…"
-          />
-          <FiltroPoblacion value={filtroPoblacion} onChange={setFiltroPoblacion} />
-        </div>
-
-        <div className={`overflow-y-auto ${compact ? "flex-1 px-4 py-3" : "min-h-0 flex-1 p-4"}`}>
-          {isLoading && <p className="text-sm text-slate-400">Cargando centros…</p>}
-          {errorMsg && (
-            <p className="mb-3 rounded-xl border border-red-800 bg-red-950/50 p-3 text-sm text-red-300">
-              {errorMsg}
-            </p>
-          )}
-          {!isLoading && centrosFiltrados.length === 0 && (
-            <p className="text-sm text-slate-400">No hay centros en este filtro.</p>
-          )}
-
-          <ul className="space-y-3 pb-4">
-            {centrosFiltrados.map((centro) => {
-              const urgenciaAlta = (centro.necesidades ?? []).some(
-                (n) => n.urgencia === "alta",
-              );
-
-              return (
-                <li
-                  key={centro.id}
-                  onClick={() => setCentroActivoId(centro.id)}
-                  className={`cursor-pointer rounded-xl border p-3.5 active:bg-slate-900 ${
-                    centroActivoId === centro.id
-                      ? "border-red-500 bg-red-950/20"
-                      : "border-slate-800 bg-slate-950/60"
-                  }`}
-                >
-                  <div className="flex items-start gap-2.5">
-                    {urgenciaAlta && (
-                      <span className="mt-1.5 h-3 w-3 shrink-0 animate-pulse rounded-full bg-red-500" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold leading-snug">{centro.nombre}</p>
-                      <p className="text-sm text-slate-400">{centro.municipio}</p>
-                      {tienePoblacion(centro) && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          👥 {resumenPoblacion(centro)}
-                        </p>
-                      )}
-                      {centro.contacto && (
-                        <a
-                          href={`tel:${centro.contacto.replace(/\s/g, "")}`}
-                          className="mt-1 inline-block text-sm text-blue-400 underline"
-                        >
-                          {centro.contacto}
-                        </a>
-                      )}
-                      {(centro.necesidades ?? []).length > 0 && (
-                        <ul
-                          className="mt-2 space-y-2 border-t border-slate-800 pt-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {(centro.necesidades ?? []).map((nec) => (
-                            <NecesidadVotos
-                              key={nec.id}
-                              centro={centro}
-                              necesidad={nec}
-                            />
-                          ))}
-                        </ul>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirReporteCentro(centro);
-                        }}
-                        className="mt-3 w-full rounded-lg border border-red-800/60 py-2 text-xs font-semibold text-red-300 active:bg-red-950/40"
-                      >
-                        + Reportar necesidad
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </>
-    );
-  }
-
-  function ReportarForm({ compact = false }: { compact?: boolean }) {
-    return (
-      <form
-        onSubmit={agregarNecesidad}
-        className={`overflow-y-auto bg-slate-900 ${compact ? "flex h-full flex-col p-4" : "border-t border-slate-800 p-4"}`}
-      >
-        <p className="mb-1 text-lg font-bold text-red-300">Registrar necesidad</p>
-        <p className="mb-4 text-sm text-slate-400">
-          Indica qué insumos faltan en un centro de acopio.
-        </p>
-
-        <SearchableSelect
-          required
-          value={necesidadForm.centro_id}
-          onChange={(centro_id) =>
-            setNecesidadForm((prev) => ({ ...prev, centro_id }))
-          }
-          placeholder="Buscar centro…"
-          className="mb-3"
-          options={centros.map((c) => ({
-            value: c.id,
-            label: c.nombre,
-            sublabel: c.municipio,
-          }))}
-        />
-
-        <SearchableSelect
-          required
-          value={necesidadForm.tipo_insumo}
-          onChange={(tipo_insumo) =>
-            setNecesidadForm((prev) => ({
-              ...prev,
-              tipo_insumo,
-              elemento_otro: tipo_insumo === "otro" ? prev.elemento_otro : "",
-            }))
-          }
-          placeholder="Buscar insumo…"
-          className="mb-3"
-          maxResults={6}
-          options={INSUMO_OPCIONES.map((o) => ({
-            value: o.value,
-            label: o.label,
-            sublabel: "sublabel" in o ? o.sublabel : undefined,
-          }))}
-        />
-
-        {necesidadForm.tipo_insumo === "otro" && (
-          <input
-            required
-            type="text"
-            placeholder="Describe la necesidad (ej. Colchones, Gasolina…)"
-            value={necesidadForm.elemento_otro}
-            onChange={(e) =>
-              setNecesidadForm((prev) => ({
-                ...prev,
-                elemento_otro: e.target.value,
-              }))
-            }
-            className={`${inputClass} mb-3`}
-          />
-        )}
-
-        <input
-          required
-          type="text"
-          placeholder="Cantidad solicitada"
-          value={necesidadForm.cantidad_solicitada}
-          onChange={(e) =>
-            setNecesidadForm((prev) => ({
-              ...prev,
-              cantidad_solicitada: e.target.value,
-            }))
-          }
-          className={`${inputClass} mb-3`}
-        />
-
-        <SearchableSelect
-          value={necesidadForm.urgencia}
-          onChange={(urgencia) =>
-            setNecesidadForm((prev) => ({
-              ...prev,
-              urgencia: urgencia as UrgenciaNivel,
-            }))
-          }
-          placeholder="Buscar urgencia…"
-          className="mb-4"
-          maxResults={3}
-          options={[
-            { value: "alta", label: "Alta", sublabel: "Prioridad máxima" },
-            { value: "media", label: "Media", sublabel: "Prioridad moderada" },
-            { value: "baja", label: "Baja", sublabel: "Prioridad baja" },
-          ]}
-        />
-
-        <button
-          type="submit"
-          disabled={
-            guardandoNecesidad ||
-            centros.length === 0 ||
-            !insumoValido(necesidadForm.tipo_insumo, necesidadForm.elemento_otro)
-          }
-          className="mt-auto w-full rounded-xl bg-red-600 py-4 text-base font-bold text-white active:bg-red-500 disabled:opacity-50"
-        >
-          {guardandoNecesidad ? "Guardando…" : "Enviar reporte"}
-        </button>
-      </form>
-    );
-  }
-
   return (
     <div className="flex h-dvh flex-col bg-slate-950 text-slate-100 lg:flex-row">
       {isDesktop && (
@@ -467,8 +258,25 @@ export default function HomeApp() {
             <PresenceStats />
           </header>
 
-          <CentrosList />
-          <ReportarForm />
+          <CentrosList
+            centros={centros}
+            centrosFiltrados={centrosFiltrados}
+            centroActivoId={centroActivoId}
+            onSeleccionarCentro={setCentroActivoId}
+            onQueryChange={setTextoBusqueda}
+            filtroPoblacion={filtroPoblacion}
+            onFiltroPoblacionChange={setFiltroPoblacion}
+            isLoading={isLoading}
+            errorMsg={errorMsg}
+            onReportarCentro={abrirReporteCentro}
+          />
+          <ReportarForm
+            centros={centros}
+            form={necesidadForm}
+            onFormChange={setNecesidadForm}
+            onSubmit={agregarNecesidad}
+            guardando={guardandoNecesidad}
+          />
           <div className="border-t border-slate-800 p-4">
             <button
               type="button"
@@ -545,7 +353,19 @@ export default function HomeApp() {
 
         {!isDesktop && tab === "centros" && (
           <div className="absolute inset-0 z-10 flex flex-col bg-slate-900">
-            <CentrosList compact />
+            <CentrosList
+              compact
+              centros={centros}
+              centrosFiltrados={centrosFiltrados}
+              centroActivoId={centroActivoId}
+              onSeleccionarCentro={setCentroActivoId}
+              onQueryChange={setTextoBusqueda}
+              filtroPoblacion={filtroPoblacion}
+              onFiltroPoblacionChange={setFiltroPoblacion}
+              isLoading={isLoading}
+              errorMsg={errorMsg}
+              onReportarCentro={abrirReporteCentro}
+            />
           </div>
         )}
 
@@ -557,7 +377,14 @@ export default function HomeApp() {
 
         {!isDesktop && tab === "reportar" && (
           <div className="absolute inset-0 z-10 h-full bg-slate-900">
-            <ReportarForm compact />
+            <ReportarForm
+              compact
+              centros={centros}
+              form={necesidadForm}
+              onFormChange={setNecesidadForm}
+              onSubmit={agregarNecesidad}
+              guardando={guardandoNecesidad}
+            />
           </div>
         )}
 

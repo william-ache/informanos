@@ -5,6 +5,7 @@ import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useInputActivo } from "@/hooks/use-input-activo";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import {
   guardarChatAutor,
@@ -37,13 +38,14 @@ export default function StreamingChat({
   const [error, setError] = useState<string | null>(null);
   const listaRef = useRef<HTMLDivElement>(null);
   const pageVisible = usePageVisible();
+  const inputActivo = useInputActivo();
 
   const { data, error: swrError, isLoading } = useSWR<ChatResponse>(
     CHAT_KEY,
     fetcher,
     {
       ...swrDefaults,
-      refreshInterval: pageVisible ? 2000 : 0,
+      refreshInterval: pageVisible && !inputActivo ? 2000 : 0,
     },
   );
 
@@ -59,10 +61,11 @@ export default function StreamingChat({
   }, []);
 
   useEffect(() => {
+    if (inputActivo) return;
     listaRef.current?.scrollTo({
       top: listaRef.current.scrollHeight,
     });
-  }, [mensajes.length]);
+  }, [mensajes.length, inputActivo]);
 
   async function enviarMensaje(event: React.FormEvent) {
     event.preventDefault();
@@ -184,6 +187,7 @@ export default function StreamingChat({
           <input
             required
             type="text"
+            autoComplete="off"
             placeholder="Tu nombre"
             value={autor}
             onChange={(e) => setAutor(e.target.value)}
@@ -196,6 +200,7 @@ export default function StreamingChat({
             <input
               autoFocus
               type="text"
+              autoComplete="off"
               placeholder="Tu nombre"
               value={autor}
               onChange={(e) => setAutor(e.target.value)}
@@ -246,6 +251,7 @@ export default function StreamingChat({
           <input
             required
             type="text"
+            autoComplete="off"
             placeholder="Mensaje de emergencia…"
             value={mensaje}
             onChange={(e) => setMensaje(e.target.value)}

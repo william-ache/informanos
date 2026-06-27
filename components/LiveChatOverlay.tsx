@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { useInputActivo } from "@/hooks/use-input-activo";
 import { swrDefaults } from "@/lib/swr-config";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import type { ChatMensaje } from "@/types/database";
@@ -27,10 +28,11 @@ export default function LiveChatOverlay({ showNavOffset = true }: LiveChatOverla
   const seenRef = useRef<Set<string>>(new Set());
   const readyRef = useRef(false);
   const pageVisible = usePageVisible();
+  const inputActivo = useInputActivo();
 
   const { data } = useSWR<ChatResponse>(CHAT_KEY, fetcher, {
     ...swrDefaults,
-    refreshInterval: pageVisible ? 2000 : 0,
+    refreshInterval: pageVisible && !inputActivo ? 2000 : 0,
   });
 
   useEffect(() => {

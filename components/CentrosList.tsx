@@ -1,0 +1,141 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import type { CentroAcopio } from "@/types/database";
+import type { FiltroPoblacion as FiltroPoblacionState } from "@/lib/poblacion";
+import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
+
+const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
+  ssr: false,
+});
+
+const FiltroPoblacion = dynamic(() => import("@/components/FiltroPoblacion"), {
+  ssr: false,
+});
+
+const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
+  ssr: false,
+});
+
+interface CentrosListProps {
+  compact?: boolean;
+  centros: CentroAcopio[];
+  centrosFiltrados: CentroAcopio[];
+  centroActivoId: string | null;
+  onSeleccionarCentro: (id: string | null) => void;
+  onQueryChange: (query: string) => void;
+  filtroPoblacion: FiltroPoblacionState;
+  onFiltroPoblacionChange: (value: FiltroPoblacionState) => void;
+  isLoading: boolean;
+  errorMsg: string | null;
+  onReportarCentro: (centro: CentroAcopio) => void;
+}
+
+export default function CentrosList({
+  compact = false,
+  centros,
+  centrosFiltrados,
+  centroActivoId,
+  onSeleccionarCentro,
+  onQueryChange,
+  filtroPoblacion,
+  onFiltroPoblacionChange,
+  isLoading,
+  errorMsg,
+  onReportarCentro,
+}: CentrosListProps) {
+  return (
+    <>
+      <div className={compact ? "space-y-3 px-4 pt-3" : "space-y-3 border-b border-slate-800 p-4"}>
+        <CentroBuscador
+          centros={centros}
+          activoId={centroActivoId}
+          onSeleccionar={onSeleccionarCentro}
+          onQueryChange={onQueryChange}
+          placeholder="Buscar por nombre o municipio…"
+        />
+        <FiltroPoblacion value={filtroPoblacion} onChange={onFiltroPoblacionChange} />
+      </div>
+
+      <div className={`overflow-y-auto ${compact ? "flex-1 px-4 py-3" : "min-h-0 flex-1 p-4"}`}>
+        {isLoading && <p className="text-sm text-slate-400">Cargando centros…</p>}
+        {errorMsg && (
+          <p className="mb-3 rounded-xl border border-red-800 bg-red-950/50 p-3 text-sm text-red-300">
+            {errorMsg}
+          </p>
+        )}
+        {!isLoading && centrosFiltrados.length === 0 && (
+          <p className="text-sm text-slate-400">No hay centros en este filtro.</p>
+        )}
+
+        <ul className="space-y-3 pb-4">
+          {centrosFiltrados.map((centro) => {
+            const urgenciaAlta = (centro.necesidades ?? []).some(
+              (n) => n.urgencia === "alta",
+            );
+
+            return (
+              <li
+                key={centro.id}
+                onClick={() => onSeleccionarCentro(centro.id)}
+                className={`cursor-pointer rounded-xl border p-3.5 active:bg-slate-900 ${
+                  centroActivoId === centro.id
+                    ? "border-red-500 bg-red-950/20"
+                    : "border-slate-800 bg-slate-950/60"
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  {urgenciaAlta && (
+                    <span className="mt-1.5 h-3 w-3 shrink-0 animate-pulse rounded-full bg-red-500" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold leading-snug">{centro.nombre}</p>
+                    <p className="text-sm text-slate-400">{centro.municipio}</p>
+                    {tienePoblacion(centro) && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        👥 {resumenPoblacion(centro)}
+                      </p>
+                    )}
+                    {centro.contacto && (
+                      <a
+                        href={`tel:${centro.contacto.replace(/\s/g, "")}`}
+                        className="mt-1 inline-block text-sm text-blue-400 underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {centro.contacto}
+                      </a>
+                    )}
+                    {(centro.necesidades ?? []).length > 0 && (
+                      <ul
+                        className="mt-2 space-y-2 border-t border-slate-800 pt-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {(centro.necesidades ?? []).map((nec) => (
+                          <NecesidadVotos
+                            key={nec.id}
+                            centro={centro}
+                            necesidad={nec}
+                          />
+                        ))}
+                      </ul>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReportarCentro(centro);
+                      }}
+                      className="mt-3 w-full rounded-lg border border-red-800/60 py-2 text-xs font-semibold text-red-300 active:bg-red-950/40"
+                    >
+                      + Reportar necesidad
+                    </button>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </>
+  );
+}

@@ -85,7 +85,9 @@ export default function SearchableSelect({
       )}
       <div className="relative">
         <input
-          type="search"
+          type="text"
+          autoComplete="off"
+          enterKeyHint="search"
           value={textoInput}
           onChange={(e) => {
             setQuery(e.target.value);
