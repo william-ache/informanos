@@ -7,6 +7,7 @@ import { fetcher } from "@/lib/fetcher";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
+import { usePrivacidad } from "@/hooks/use-privacidad";
 import type { CentroAcopio, NuevoCentroAcopio, UrgenciaNivel } from "@/types/database";
 
 const Map = dynamic(() => import("@/components/Map"), {
@@ -39,15 +40,26 @@ const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
   ssr: false,
 });
 
+const PoliticaPrivacidadModal = dynamic(
+  () => import("@/components/PoliticaPrivacidadModal"),
+  { ssr: false },
+);
+
+const ReportarErrorModal = dynamic(
+  () => import("@/components/ReportarErrorModal"),
+  { ssr: false },
+);
+
 const CENTROS_KEY = "/api/centros";
 
-type Tab = "mapa" | "centros" | "chat" | "reportar";
+type Tab = "mapa" | "centros" | "chat" | "reportar" | "errores";
 
 const tabs: { id: Tab; label: string; short: string }[] = [
   { id: "mapa", label: "Mapa", short: "M" },
   { id: "centros", label: "Centros", short: "C" },
   { id: "chat", label: "Chat", short: "H" },
   { id: "reportar", label: "Reportar", short: "!" },
+  { id: "errores", label: "Errores", short: "E" },
 ];
 
 const emptyNecesidad = {
@@ -74,7 +86,9 @@ export default function HomeApp() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
   const [agregarMenuOpen, setAgregarMenuOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
   const pageVisible = usePageVisible();
+  const { pendiente: privacidadPendiente } = usePrivacidad();
 
   const { data, error, isLoading } = useSWR<CentrosResponse>(
     CENTROS_KEY,
@@ -98,6 +112,10 @@ export default function HomeApp() {
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    if (tab === "errores") setErrorModalOpen(true);
+  }, [tab]);
 
   const centrosFiltrados = useMemo(() => {
     let list = centros;
@@ -382,6 +400,15 @@ export default function HomeApp() {
 
           <CentrosList />
           <ReportarForm />
+          <div className="border-t border-slate-800 p-4">
+            <button
+              type="button"
+              onClick={() => setErrorModalOpen(true)}
+              className="w-full rounded-xl border border-amber-800/60 bg-amber-950/30 py-3 text-sm font-semibold text-amber-300 active:bg-amber-950/50"
+            >
+              Reportar error del sistema
+            </button>
+          </div>
         </aside>
       )}
 
@@ -463,7 +490,34 @@ export default function HomeApp() {
             <ReportarForm compact />
           </div>
         )}
+
+        {!isDesktop && tab === "errores" && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900 p-6 text-center">
+            <p className="text-lg font-bold text-amber-300">Reportar errores</p>
+            <p className="mt-2 max-w-sm text-sm text-slate-400">
+              Fallos del sistema, datos incorrectos o información falsa para
+              corregirla pronto.
+            </p>
+            <button
+              type="button"
+              onClick={() => setErrorModalOpen(true)}
+              className="mt-6 w-full max-w-xs rounded-xl bg-amber-600 py-3.5 text-base font-bold text-white active:bg-amber-500"
+            >
+              Abrir formulario
+            </button>
+          </div>
+        )}
       </main>
+
+      <PoliticaPrivacidadModal open={privacidadPendiente} />
+      <ReportarErrorModal
+        open={errorModalOpen}
+        onClose={() => {
+          setErrorModalOpen(false);
+          if (tab === "errores" && !isDesktop) setTab("mapa");
+        }}
+        centros={centros}
+      />
 
       {!isDesktop && (
         <nav className="relative z-30 flex shrink-0 border-t border-slate-800 bg-slate-950 pb-safe">
@@ -476,7 +530,7 @@ export default function HomeApp() {
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition active:scale-95 ${
+                className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition active:scale-95 ${
                   active ? "text-red-400" : "text-slate-500"
                 }`}
               >

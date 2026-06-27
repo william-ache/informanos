@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { mutate } from "swr";
+import { datosExtendidosPermitidos } from "@/lib/privacidad";
 import { calcularDistanciaMetros } from "@/lib/geo";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import type { CentroAcopio, Necesidad, VerificarAccion } from "@/types/database";
@@ -99,28 +100,37 @@ export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProp
     setVotando(true);
 
     try {
-      const pos = await obtenerUbicacion();
-      const distancia = calcularDistanciaMetros(
-        pos.coords.latitude,
-        pos.coords.longitude,
-        centro.latitud,
-        centro.longitud,
-      );
+      let esTestigo = false;
 
-      let esTestigo = distancia !== null && distancia <= GEOCERCA_METROS;
+      if (datosExtendidosPermitidos()) {
+        const pos = await obtenerUbicacion();
+        const distancia = calcularDistanciaMetros(
+          pos.coords.latitude,
+          pos.coords.longitude,
+          centro.latitud,
+          centro.longitud,
+        );
 
-      if (distancia !== null && distancia > GEOCERCA_METROS) {
+        esTestigo = distancia !== null && distancia <= GEOCERCA_METROS;
+
+        if (distancia !== null && distancia > GEOCERCA_METROS) {
+          const acepta = window.confirm(
+            `Parece que estás a ${distancia} metros de este centro. Para evitar desinformación, ¿confirmas que tienes información verídica y de primera mano sobre este lugar?`,
+          );
+          if (!acepta) return;
+          esTestigo = false;
+        } else if (distancia === null) {
+          const acepta = window.confirm(
+            "No pudimos calcular tu distancia al centro. ¿Confirmas que tu información es verídica y de primera mano?",
+          );
+          if (!acepta) return;
+          esTestigo = false;
+        }
+      } else {
         const acepta = window.confirm(
-          `Parece que estás a ${distancia} metros de este centro. Para evitar desinformación, ¿confirmas que tienes información verídica y de primera mano sobre este lugar?`,
+          "¿Confirmas que tu información es verídica? (Sin ubicación, tu voto cuenta con peso normal.)",
         );
         if (!acepta) return;
-        esTestigo = false;
-      } else if (distancia === null) {
-        const acepta = window.confirm(
-          "No pudimos calcular tu distancia al centro. ¿Confirmas que tu información es verídica y de primera mano?",
-        );
-        if (!acepta) return;
-        esTestigo = false;
       }
 
       const peso = esTestigo ? 2 : 1;

@@ -11,6 +11,7 @@ import {
   limpiarChatAutor,
   obtenerChatAutor,
 } from "@/lib/chat-autor";
+import { datosExtendidosPermitidos } from "@/lib/privacidad";
 import type { ChatMensaje } from "@/types/database";
 
 interface ChatResponse {
@@ -72,7 +73,7 @@ export default function StreamingChat({
     let latitud: number | null = null;
     let longitud: number | null = null;
 
-    if (navigator.geolocation) {
+    if (datosExtendidosPermitidos() && navigator.geolocation) {
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {

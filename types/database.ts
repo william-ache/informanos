@@ -1,3 +1,19 @@
+export type TipoReporteError =
+  | "error_sistema"
+  | "info_erronea"
+  | "info_falsa"
+  | "otro";
+
+export interface ReporteError {
+  id: string;
+  tipo: TipoReporteError;
+  descripcion: string;
+  centro_id: string | null;
+  contacto: string | null;
+  pagina: string | null;
+  creado_en: string;
+}
+
 export type UrgenciaNivel = "alta" | "media" | "baja";
 export type NecesidadEstado = "disponible" | "agotado";
 export type VerificarAccion = "confirmar_disponible" | "reportar_agotado";

@@ -71,7 +71,24 @@ CREATE TABLE IF NOT EXISTS visitas_ip (
   ultima_visita DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Usuario de aplicación (requiere política MySQL: mayúscula, número, símbolo)
+CREATE TABLE IF NOT EXISTS reportes_errores (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  tipo ENUM('error_sistema', 'info_erronea', 'info_falsa', 'otro') NOT NULL,
+  descripcion TEXT NOT NULL,
+  centro_id VARCHAR(36) NULL,
+  contacto VARCHAR(200) NULL,
+  pagina VARCHAR(500) NULL,
+  user_agent VARCHAR(500) NULL,
+  ip_hash VARCHAR(64) NULL,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_reportes_tipo (tipo),
+  INDEX idx_reportes_creado (creado_en),
+  CONSTRAINT fk_reportes_centro
+    FOREIGN KEY (centro_id) REFERENCES centros_acopio (id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Usuario de aplicación
 CREATE USER IF NOT EXISTS 'informa'@'localhost' IDENTIFIED BY 'Informa@Aragua2026!';
 GRANT ALL PRIVILEGES ON informa_aragua.* TO 'informa'@'localhost';
 FLUSH PRIVILEGES;
