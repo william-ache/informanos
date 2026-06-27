@@ -13,9 +13,9 @@ export function parseTipoVotable(value: unknown): TipoLugar | null {
   return TIPOS_LUGAR.includes(tipo) ? tipo : null;
 }
 
-export function propuestaActiva(
-  propuesta: PropuestaTipoLugar | null | undefined,
-): propuesta is PropuestaTipoLugar {
+export function propuestaActiva<T extends { estado: string; expira_en: string }>(
+  propuesta: T | null | undefined,
+): propuesta is T {
   if (!propuesta || propuesta.estado !== "activa") return false;
   const expira = new Date(propuesta.expira_en.replace(" ", "T") + "-04:00");
   return expira.getTime() > Date.now();

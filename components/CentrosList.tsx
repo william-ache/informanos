@@ -23,6 +23,11 @@ const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
   ssr: false,
 });
 
+const NecesidadPropuestaVoto = dynamic(
+  () => import("@/components/NecesidadPropuestaVoto"),
+  { ssr: false },
+);
+
 const CentroVotoTipo = dynamic(() => import("@/components/CentroVotoTipo"), {
   ssr: false,
 });
@@ -153,6 +158,25 @@ export default function CentrosList({
                             centro={centro}
                             necesidad={nec}
                           />
+                        ))}
+                      </ul>
+                    )}
+                    {(centro.propuestas_necesidad_nuevas ?? []).length > 0 && (
+                      <ul
+                        className="mt-2 space-y-2 border-t border-slate-800 pt-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {(centro.propuestas_necesidad_nuevas ?? []).map((prop) => (
+                          <li
+                            key={prop.id}
+                            className="rounded-lg border border-slate-800/80 bg-slate-900/40 p-2.5"
+                          >
+                            <NecesidadPropuestaVoto
+                              centro={centro}
+                              propuesta={prop}
+                              compact
+                            />
+                          </li>
                         ))}
                       </ul>
                     )}

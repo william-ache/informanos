@@ -11,6 +11,7 @@ import {
 } from "@/lib/centro-map";
 import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
 import { cargarPropuestasActivas } from "@/lib/propuesta-tipo-server";
+import { cargarPropuestasNecesidadActivas } from "@/lib/propuesta-necesidad-server";
 import {
   mensajeChatNuevoLugar,
   parseDonacionLimite,
@@ -45,14 +46,29 @@ export async function GET() {
     }
 
     const propuestasPorCentro = await cargarPropuestasActivas();
+    const { porNecesidad, nuevas: propuestasNuevas } =
+      await cargarPropuestasNecesidadActivas();
 
-    const centros = centrosRows.map((row) =>
-      mapCentro(
+    const propuestasNuevasPorCentro = new Map<string, typeof propuestasNuevas>();
+    for (const prop of propuestasNuevas) {
+      const lista = propuestasNuevasPorCentro.get(prop.centro_id) ?? [];
+      lista.push(prop);
+      propuestasNuevasPorCentro.set(prop.centro_id, lista);
+    }
+
+    const centros = centrosRows.map((row) => {
+      const necesidades = (necesidadesPorCentro.get(row.id) ?? []).map((nec) => ({
+        ...nec,
+        propuesta_edit: porNecesidad.get(nec.id) ?? null,
+      }));
+
+      return mapCentro(
         row,
-        necesidadesPorCentro.get(row.id) ?? [],
+        necesidades,
         propuestasPorCentro.get(row.id) ?? null,
-      ),
-    );
+        propuestasNuevasPorCentro.get(row.id) ?? [],
+      );
+    });
 
     return NextResponse.json({ centros });
   } catch (error) {

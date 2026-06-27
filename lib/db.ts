@@ -156,6 +156,45 @@ export async function ensureSchema(): Promise<void> {
       }
 
       await pool.query(`
+        CREATE TABLE IF NOT EXISTS propuestas_necesidad (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          centro_id VARCHAR(36) NOT NULL,
+          necesidad_id VARCHAR(36) NULL,
+          accion ENUM('editar', 'agregar', 'eliminar') NOT NULL DEFAULT 'editar',
+          elemento VARCHAR(255) NOT NULL,
+          cantidad_solicitada VARCHAR(100) NOT NULL DEFAULT '',
+          urgencia ENUM('alta', 'media', 'baja') NOT NULL DEFAULT 'media',
+          estado ENUM('activa', 'aprobada', 'rechazada') NOT NULL DEFAULT 'activa',
+          expira_en DATETIME NOT NULL,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_prop_nec_centro (centro_id),
+          INDEX idx_prop_nec_estado (estado, expira_en),
+          CONSTRAINT fk_prop_nec_centro
+            FOREIGN KEY (centro_id) REFERENCES centros_acopio (id)
+            ON DELETE CASCADE,
+          CONSTRAINT fk_prop_nec_necesidad
+            FOREIGN KEY (necesidad_id) REFERENCES necesidades (id)
+            ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS votos_propuesta_necesidad (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          propuesta_id VARCHAR(36) NOT NULL,
+          voto ENUM('si', 'no') NOT NULL,
+          ip_hash VARCHAR(64) NOT NULL,
+          peso INT NOT NULL DEFAULT 1,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_voto_prop_nec_ip (propuesta_id, ip_hash),
+          INDEX idx_votos_prop_nec (propuesta_id),
+          CONSTRAINT fk_voto_prop_nec
+            FOREIGN KEY (propuesta_id) REFERENCES propuestas_necesidad (id)
+            ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,
           ip_hash VARCHAR(64) NOT NULL,

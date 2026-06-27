@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { mutate } from "swr";
-import { datosExtendidosPermitidos } from "@/lib/privacidad";
-import { calcularDistanciaMetros } from "@/lib/geo";
 import { formatFechaHumana } from "@/lib/formatFecha";
+import { resolverVotoPresencial } from "@/lib/voto-presencial";
 import type { CentroAcopio, Necesidad, VerificarAccion } from "@/types/database";
-
-const GEOCERCA_METROS = 500;
+import NecesidadPropuestaVoto from "@/components/NecesidadPropuestaVoto";
 
 interface CentrosResponse {
   centros: CentroAcopio[];
@@ -16,21 +14,6 @@ interface CentrosResponse {
 interface NecesidadVotosProps {
   centro: CentroAcopio;
   necesidad: Necesidad;
-}
-
-function obtenerUbicacion(): Promise<GeolocationPosition> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Tu navegador no soporta geolocalización."));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0,
-    });
-  });
 }
 
 function aplicarVotoOptimista(
@@ -93,46 +76,17 @@ function reemplazarNecesidad(
 
 export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProps) {
   const [votando, setVotando] = useState(false);
+  const propuestaEdit = necesidad.propuesta_edit ?? null;
 
   async function verificar(accion: VerificarAccion) {
     if (votando) return;
 
+    const { continuar, esTestigo } = await resolverVotoPresencial(centro);
+    if (!continuar) return;
+
     setVotando(true);
 
     try {
-      let esTestigo = false;
-
-      if (datosExtendidosPermitidos()) {
-        const pos = await obtenerUbicacion();
-        const distancia = calcularDistanciaMetros(
-          pos.coords.latitude,
-          pos.coords.longitude,
-          centro.latitud,
-          centro.longitud,
-        );
-
-        esTestigo = distancia !== null && distancia <= GEOCERCA_METROS;
-
-        if (distancia !== null && distancia > GEOCERCA_METROS) {
-          const acepta = window.confirm(
-            `Parece que estás a ${distancia} metros de este centro. Para evitar desinformación, ¿confirmas que tienes información verídica y de primera mano sobre este lugar?`,
-          );
-          if (!acepta) return;
-          esTestigo = false;
-        } else if (distancia === null) {
-          const acepta = window.confirm(
-            "No pudimos calcular tu distancia al centro. ¿Confirmas que tu información es verídica y de primera mano?",
-          );
-          if (!acepta) return;
-          esTestigo = false;
-        }
-      } else {
-        const acepta = window.confirm(
-          "¿Confirmas que tu información es verídica? (Sin ubicación, tu voto cuenta con peso normal.)",
-        );
-        if (!acepta) return;
-      }
-
       const peso = esTestigo ? 2 : 1;
 
       await mutate(
@@ -164,13 +118,7 @@ export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProp
         },
       );
     } catch (err) {
-      const msg =
-        err instanceof GeolocationPositionError
-          ? "Activa la ubicación del dispositivo para verificar insumos."
-          : err instanceof Error
-            ? err.message
-            : "Error al verificar.";
-      window.alert(msg);
+      window.alert(err instanceof Error ? err.message : "Error al verificar.");
     } finally {
       setVotando(false);
     }
@@ -211,11 +159,19 @@ export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProp
         )}
       </span>
 
+      {propuestaEdit && (
+        <NecesidadPropuestaVoto
+          centro={centro}
+          propuesta={propuestaEdit}
+          compact
+        />
+      )}
+
       <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
           disabled={votando}
-          onClick={() => verificar("confirmar_disponible")}
+          onClick={() => void verificar("confirmar_disponible")}
           className="rounded-lg border border-emerald-800/60 bg-emerald-950/40 px-2.5 py-1.5 text-xs font-medium text-emerald-300 active:bg-emerald-900/50 disabled:opacity-50"
         >
           👍 Confirmar que hay
@@ -223,7 +179,7 @@ export default function NecesidadVotos({ centro, necesidad }: NecesidadVotosProp
         <button
           type="button"
           disabled={votando || agotado}
-          onClick={() => verificar("reportar_agotado")}
+          onClick={() => void verificar("reportar_agotado")}
           className="rounded-lg border border-amber-800/60 bg-amber-950/40 px-2.5 py-1.5 text-xs font-medium text-amber-300 active:bg-amber-900/50 disabled:opacity-50"
         >
           ⚠️ Reportar Agotado
