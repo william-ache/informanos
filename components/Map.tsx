@@ -67,7 +67,6 @@ interface MapProps {
   active?: boolean;
   hideAgregarButton?: boolean;
   trackMapCenter?: boolean;
-  solicitudAgregarCentro?: number;
   agregarMenuOpen?: boolean;
   onAgregarMenuChange?: (open: boolean) => void;
   onUiModalChange?: (open: boolean) => void;
@@ -177,7 +176,6 @@ function MapView({
   active = true,
   hideAgregarButton = false,
   trackMapCenter = false,
-  solicitudAgregarCentro = 0,
   agregarMenuOpen,
   onAgregarMenuChange,
   onUiModalChange,
@@ -255,12 +253,6 @@ function MapView({
   function handleMapClick(lat: number, lng: number) {
     void abrirFormulario(lat, lng);
   }
-
-  useEffect(() => {
-    if (!solicitudAgregarCentro || !trackMapCenter || !active) return;
-    const { lat, lng } = centroMapaRef.current;
-    void abrirFormulario(lat, lng);
-  }, [solicitudAgregarCentro, trackMapCenter, active]);
 
   function cerrarModal() {
     setModalAbierto(false);

@@ -156,7 +156,6 @@ export default function HomeApp() {
   );
   const [vistaCentros, setVistaCentros] = useState<VistaCentros>("activos");
   const [mapUiModal, setMapUiModal] = useState(false);
-  const [solicitudAgregarCentro, setSolicitudAgregarCentro] = useState(0);
   const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
   const [instalarAppOpen, setInstalarAppOpen] = useState(false);
   const pageVisible = usePageVisible();
@@ -600,7 +599,6 @@ export default function HomeApp() {
             onTipoLugarInicialConsumido={() => setTipoLugarInicial(null)}
             hideAgregarButton={!isDesktop}
             trackMapCenter={!isDesktop && tab === "mapa"}
-            solicitudAgregarCentro={solicitudAgregarCentro}
             agregarMenuOpen={agregarMenuOpen}
             onAgregarMenuChange={setAgregarMenuOpen}
             onUiModalChange={setMapUiModal}
@@ -681,9 +679,9 @@ export default function HomeApp() {
           {tab === "mapa" && (
             <button
               type="button"
-              onClick={() => setSolicitudAgregarCentro((n) => n + 1)}
+              onClick={() => setAgregarMenuOpen(true)}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold leading-none text-white shadow-lg active:scale-95"
-              aria-label="Agregar lugar en el centro del mapa"
+              aria-label="Agregar lugar"
             >
               +
             </button>
