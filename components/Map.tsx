@@ -10,6 +10,7 @@ import {
 } from "react-leaflet";
 import CentroMarkers from "@/components/CentroMarkers";
 import AraguaBoundary from "@/components/AraguaBoundary";
+import AgregarLugarSheet from "@/components/AgregarLugarSheet";
 import ModalPortal from "@/components/ModalPortal";
 import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
@@ -28,6 +29,8 @@ const emptyForm = {
 
 interface MapProps {
   centros: CentroAcopio[];
+  centroActivoId?: string | null;
+  onCentroClick?: (centro: CentroAcopio) => void;
   onRegistrarCentro?: (centro: NuevoCentroAcopio) => void | Promise<void>;
   className?: string;
   active?: boolean;
@@ -62,13 +65,34 @@ function MapResize({ active }: { active: boolean }) {
   return null;
 }
 
+function MapFlyTo({
+  lat,
+  lng,
+  zoom = 14,
+}: {
+  lat: number;
+  lng: number;
+  zoom?: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.flyTo([lat, lng], zoom, { duration: 0.7 });
+  }, [lat, lng, zoom, map]);
+
+  return null;
+}
+
 function MapView({
   centros,
+  centroActivoId,
+  onCentroClick,
   onRegistrarCentro,
   className = "",
   active = true,
 }: MapProps) {
-  const [registrarActivo, setRegistrarActivo] = useState(false);
+  const [menuAgregar, setMenuAgregar] = useState(false);
+  const [seleccionMapa, setSeleccionMapa] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     null,
@@ -87,7 +111,7 @@ function MapView({
     return () => window.clearTimeout(id);
   }, [alertaZona]);
 
-  function handleMapClick(lat: number, lng: number) {
+  function abrirFormulario(lat: number, lng: number) {
     if (!puntoEnAragua(lat, lng)) {
       setAlertaZona(MENSAJE_FUERA_ARAGUA);
       return;
@@ -97,12 +121,21 @@ function MapView({
     setCoords({ lat, lng });
     setForm(emptyForm);
     setModalAbierto(true);
+    setSeleccionMapa(false);
+  }
+
+  function handleMapClick(lat: number, lng: number) {
+    abrirFormulario(lat, lng);
   }
 
   function cerrarModal() {
     setModalAbierto(false);
     setCoords(null);
     setForm(emptyForm);
+  }
+
+  function cancelarSeleccionMapa() {
+    setSeleccionMapa(false);
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -125,11 +158,18 @@ function MapView({
         longitud: coords.lng,
       });
       cerrarModal();
-      setRegistrarActivo(false);
+      setSeleccionMapa(false);
     } finally {
       setEnviando(false);
     }
   }
+
+  const centroActivo = centros.find((c) => c.id === centroActivoId);
+  const flyTarget =
+    coords ??
+    (centroActivo
+      ? { lat: centroActivo.latitud, lng: centroActivo.longitud }
+      : null);
 
   return (
     <div className={`relative h-full w-full ${className}`}>
@@ -138,7 +178,10 @@ function MapView({
         zoom={INITIAL_ZOOM}
         preferCanvas
         className="h-full w-full"
-        style={{ minHeight: 0, cursor: registrarActivo ? "crosshair" : "grab" }}
+        style={{
+          minHeight: 0,
+          cursor: seleccionMapa ? "crosshair" : "grab",
+        }}
       >
         <TileLayer
           attribution='&copy; OSM'
@@ -150,8 +193,18 @@ function MapView({
 
         <MapResize active={active} />
         <AraguaBoundary />
-        <MapClickHandler active={registrarActivo} onMapClick={handleMapClick} />
-        <CentroMarkers centros={centros} />
+        {flyTarget && modalAbierto && (
+          <MapFlyTo lat={flyTarget.lat} lng={flyTarget.lng} />
+        )}
+        {centroActivo && !modalAbierto && (
+          <MapFlyTo lat={centroActivo.latitud} lng={centroActivo.longitud} />
+        )}
+        <MapClickHandler active={seleccionMapa} onMapClick={handleMapClick} />
+        <CentroMarkers
+          centros={centros}
+          centroActivoId={centroActivoId}
+          onCentroClick={onCentroClick}
+        />
 
         {coords && modalAbierto && (
           <Marker position={[coords.lat, coords.lng]} />
@@ -171,21 +224,38 @@ function MapView({
       <button
         type="button"
         onClick={() => {
-          setRegistrarActivo((prev) => !prev);
+          if (seleccionMapa) {
+            cancelarSeleccionMapa();
+            return;
+          }
           if (modalAbierto) cerrarModal();
+          setMenuAgregar(true);
         }}
-        className={`absolute right-3 top-3 z-[1000] rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg active:scale-95 lg:top-4 lg:right-4 ${
-          registrarActivo ? "bg-red-600" : "bg-blue-700"
+        className={`absolute right-3 top-3 z-[1000] max-w-[11rem] rounded-xl px-3 py-3 text-xs font-bold leading-tight text-white shadow-lg active:scale-95 sm:max-w-none sm:px-4 sm:text-sm lg:top-4 lg:right-4 ${
+          seleccionMapa ? "bg-red-600" : "bg-blue-700"
         }`}
       >
-        {registrarActivo ? "Cancelar" : "+ Centro"}
+        {seleccionMapa ? "Cancelar" : "+ Agregar lugar de ayuda"}
       </button>
 
-      {registrarActivo && !modalAbierto && (
+      {seleccionMapa && !modalAbierto && (
         <div className="pointer-events-none absolute bottom-4 left-3 right-3 z-[1000] mx-auto max-w-sm rounded-xl bg-black/80 px-4 py-2.5 text-center text-sm text-white lg:bottom-6">
           Toca el mapa dentro de la zona roja (Estado Aragua)
         </div>
       )}
+
+      <AgregarLugarSheet
+        open={menuAgregar}
+        onClose={() => setMenuAgregar(false)}
+        onSeleccionarMapa={() => {
+          setMenuAgregar(false);
+          setSeleccionMapa(true);
+        }}
+        onCoordsListas={({ lat, lng }) => {
+          setMenuAgregar(false);
+          abrirFormulario(lat, lng);
+        }}
+      />
 
       {modalAbierto && coords && (
         <ModalPortal open>
@@ -198,52 +268,52 @@ function MapView({
               onClick={(e) => e.stopPropagation()}
               className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 pb-safe text-slate-900 shadow-2xl lg:max-w-md lg:rounded-2xl lg:pb-5"
             >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 lg:hidden" />
-            <h2 className="text-lg font-bold">Nuevo centro de acopio</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-            </p>
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 lg:hidden" />
+              <h2 className="text-lg font-bold">Nuevo lugar de ayuda</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+              </p>
 
-            {(
-              [
-                ["nombre", "Nombre *", "text"],
-                ["municipio", "Municipio *", "text"],
-                ["direccion", "Dirección", "text"],
-                ["contacto", "Contacto", "tel"],
-              ] as const
-            ).map(([key, label, type]) => (
-              <label key={key} className="mt-3 block text-sm font-medium">
-                {label}
-                <input
-                  type={type}
-                  required={key === "nombre" || key === "municipio"}
-                  value={form[key]}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, [key]: e.target.value }))
-                  }
-                  className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-            ))}
+              {(
+                [
+                  ["nombre", "Nombre del lugar *", "text"],
+                  ["municipio", "Municipio *", "text"],
+                  ["direccion", "Dirección", "text"],
+                  ["contacto", "Contacto", "tel"],
+                ] as const
+              ).map(([key, label, type]) => (
+                <label key={key} className="mt-3 block text-sm font-medium">
+                  {label}
+                  <input
+                    type={type}
+                    required={key === "nombre" || key === "municipio"}
+                    value={form[key]}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, [key]: e.target.value }))
+                    }
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </label>
+              ))}
 
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={cerrarModal}
-                className="flex-1 rounded-xl border border-slate-300 py-3 text-base font-semibold active:bg-slate-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={enviando || !onRegistrarCentro}
-                className="flex-1 rounded-xl bg-emerald-600 py-3 text-base font-semibold text-white active:bg-emerald-500 disabled:opacity-50"
-              >
-                {enviando ? "Guardando…" : "Guardar"}
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={cerrarModal}
+                  className="flex-1 rounded-xl border border-slate-300 py-3 text-base font-semibold active:bg-slate-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={enviando || !onRegistrarCentro}
+                  className="flex-1 rounded-xl bg-emerald-600 py-3 text-base font-semibold text-white active:bg-emerald-500 disabled:opacity-50"
+                >
+                  {enviando ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
+            </form>
+          </div>
         </ModalPortal>
       )}
     </div>
