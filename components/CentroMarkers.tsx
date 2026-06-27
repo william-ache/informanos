@@ -13,7 +13,6 @@ import TipoLugarBadge from "@/components/TipoLugarBadge";
 import CentroDescripcion from "@/components/CentroDescripcion";
 import CentroVotoTipo from "@/components/CentroVotoTipo";
 import CentroEditarModal from "@/components/CentroEditarModal";
-import CentroVotoOperativo from "@/components/CentroVotoOperativo";
 import AyudaSolicitadaInfo from "@/components/AyudaSolicitadaInfo";
 
 function urgenciaClass(urgencia: string) {
@@ -169,9 +168,6 @@ function CentroMarkerItem({
 
           <div className="centro-popup-scroll mt-2 border-t border-slate-200 pt-2">
             <CentroVotoTipo centro={centro} compact />
-            <div className="mt-1.5">
-              <CentroVotoOperativo centro={centro} modo="finalizar" compact />
-            </div>
           </div>
 
           <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
