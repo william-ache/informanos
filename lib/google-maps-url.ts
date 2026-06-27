@@ -45,3 +45,22 @@ export function parseCoordenadasManuales(
 ): Coordenadas | null {
   return parsePair(latTexto.trim(), lngTexto.trim());
 }
+
+export function urlGoogleMaps(
+  lat: number,
+  lng: number,
+  etiqueta?: string,
+): string {
+  const query = etiqueta?.trim()
+    ? `${encodeURIComponent(etiqueta)}@${lat},${lng}`
+    : `${lat},${lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+export function abrirEnGoogleMaps(
+  lat: number,
+  lng: number,
+  etiqueta?: string,
+): void {
+  window.open(urlGoogleMaps(lat, lng, etiqueta), "_blank", "noopener,noreferrer");
+}

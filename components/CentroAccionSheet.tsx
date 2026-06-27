@@ -1,6 +1,7 @@
 "use client";
 
 import ModalPortal from "@/components/ModalPortal";
+import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
 import type { CentroAcopio } from "@/types/database";
 
 interface CentroAccionSheetProps {
@@ -41,6 +42,15 @@ export default function CentroAccionSheet({
           )}
 
           <div className="mt-5 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                abrirEnGoogleMaps(centro.latitud, centro.longitud, centro.nombre)
+              }
+              className="w-full rounded-xl bg-blue-600 py-3.5 text-base font-bold text-white active:bg-blue-500"
+            >
+              Ver en Google Maps
+            </button>
             <button
               type="button"
               onClick={() => onReportar(centro)}

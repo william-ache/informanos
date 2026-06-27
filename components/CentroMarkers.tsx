@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { Marker, Popup } from "react-leaflet";
 import { formatFechaHumana } from "@/lib/formatFecha";
+import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
 import type { CentroAcopio } from "@/types/database";
 
 function urgenciaClass(urgencia: string) {
@@ -32,7 +33,8 @@ function CentroMarkersInner({
             key={centro.id}
             position={[centro.latitud, centro.longitud]}
             eventHandlers={{
-              click: () => onCentroClick?.(centro),
+              click: () =>
+                abrirEnGoogleMaps(centro.latitud, centro.longitud, centro.nombre),
             }}
             opacity={centroActivoId && !activo ? 0.45 : 1}
           >
@@ -68,11 +70,21 @@ function CentroMarkersInner({
                   </p>
                 )}
 
+                <button
+                  type="button"
+                  onClick={() =>
+                    abrirEnGoogleMaps(centro.latitud, centro.longitud, centro.nombre)
+                  }
+                  className="mt-3 w-full rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
+                >
+                  Ver en Google Maps
+                </button>
+
                 {onCentroClick && (
                   <button
                     type="button"
                     onClick={() => onCentroClick(centro)}
-                    className="mt-3 w-full rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white"
+                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
                   >
                     Gestionar este lugar
                   </button>
