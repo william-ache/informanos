@@ -3,13 +3,12 @@
 import { memo, useEffect, useRef } from "react";
 import { Marker, Popup } from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
-import { formatFechaHumana } from "@/lib/formatFecha";
 import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
 import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
 import type { CentroAcopio } from "@/types/database";
 
 function urgenciaClass(urgencia: string) {
-  if (urgencia === "alta") return "font-bold text-red-600";
+  if (urgencia === "alta") return "font-semibold text-red-600";
   if (urgencia === "media") return "text-amber-600";
   return "text-emerald-600";
 }
@@ -57,108 +56,101 @@ function CentroMarkerItem({
       opacity={activo ? 1 : 0.45}
     >
       <Popup
-        maxWidth={300}
-        autoPan
-        autoPanPadding={[16, 16]}
-        keepInView
+        maxWidth={240}
+        offset={[0, -6]}
+        autoPan={false}
+        closeOnClick={false}
+        autoClose={false}
         className="centro-popup"
       >
-        <div className="centro-popup-inner flex w-[min(280px,calc(100vw-2.5rem))] flex-col text-slate-900">
-          <div className="shrink-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="font-bold leading-tight">{centro.nombre}</p>
-                <p className="mt-0.5 text-sm text-slate-600">{centro.municipio}</p>
-              </div>
-              {onReportarLugar && (
-                <button
-                  type="button"
-                  onClick={() => onReportarLugar(centro)}
-                  className="shrink-0 rounded-md border border-amber-400 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800"
-                >
-                  Reportar
-                </button>
-              )}
-            </div>
-
-            {tienePoblacion(centro) && (
-              <p className="mt-1 text-xs leading-snug text-slate-500">
-                👥 {resumenPoblacion(centro)}
+        <div className="centro-popup-inner w-[min(230px,calc(100vw-3rem))] text-slate-900">
+          <div className="flex items-start gap-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-[13px] font-bold leading-snug">
+                {centro.nombre}
               </p>
-            )}
-
-            {centro.contacto && (
-              <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
-                {centro.contacto.split(",").map((tel) => {
-                  const limpio = tel.trim();
-                  if (!limpio) return null;
-                  return (
-                    <a
-                      key={limpio}
-                      href={`tel:${limpio.replace(/\s/g, "")}`}
-                      className="text-blue-600 underline"
-                    >
-                      {limpio}
-                    </a>
-                  );
-                })}
-              </div>
+              <p className="text-[11px] text-slate-500">{centro.municipio}</p>
+            </div>
+            {onReportarLugar && (
+              <button
+                type="button"
+                onClick={() => onReportarLugar(centro)}
+                className="shrink-0 rounded border border-amber-400 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-800"
+              >
+                Rep.
+              </button>
             )}
           </div>
 
-          <div className="centro-popup-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {tienePoblacion(centro) && (
+            <p className="mt-0.5 truncate text-[10px] text-slate-500">
+              👥 {resumenPoblacion(centro)}
+            </p>
+          )}
+
+          {centro.contacto && (
+            <p className="mt-0.5 truncate text-[10px]">
+              {centro.contacto.split(",")[0]?.trim() && (
+                <a
+                  href={`tel:${centro.contacto.split(",")[0].trim().replace(/\s/g, "")}`}
+                  className="text-blue-600 underline"
+                >
+                  {centro.contacto.split(",")[0].trim()}
+                </a>
+              )}
+            </p>
+          )}
+
+          <div className="centro-popup-scroll mt-1.5 border-t border-slate-200 pt-1.5">
             {centro.necesidades && centro.necesidades.length > 0 ? (
-              <ul className="mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs">
+              <ul className="space-y-1 text-[10px] leading-snug">
                 {centro.necesidades.map((nec) => (
-                  <li key={nec.id}>
+                  <li key={nec.id} className="truncate">
                     <span className={urgenciaClass(nec.urgencia)}>
-                      {nec.urgencia.toUpperCase()}
+                      {nec.urgencia.slice(0, 1).toUpperCase()}
                     </span>
-                    {nec.estado === "agotado" && (
-                      <span className="ml-1 text-slate-500">· AGOTADO</span>
-                    )}
                     {" · "}
                     {nec.elemento} ({nec.cantidad_solicitada})
-                    <span className="mt-0.5 block text-slate-500">
-                      {formatFechaHumana(nec.actualizado_en)}
-                    </span>
+                    {nec.estado === "agotado" && (
+                      <span className="text-slate-400"> · agotado</span>
+                    )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 border-t border-slate-200 pt-2 text-sm text-slate-500">
-                Sin necesidades registradas.
-              </p>
+              <p className="text-[10px] text-slate-500">Sin necesidades.</p>
             )}
           </div>
 
-          <div className="mt-2 shrink-0 space-y-2 border-t border-slate-200 pt-2">
+          <div className="mt-1.5 grid grid-cols-2 gap-1 border-t border-slate-200 pt-1.5">
             <button
               type="button"
               onClick={() => abrirEnGoogleMaps(centro.latitud, centro.longitud)}
-              className="w-full rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
+              className="rounded-md bg-blue-600 px-2 py-1.5 text-[10px] font-bold text-white"
             >
-              Ver en Google Maps
+              Maps
             </button>
-            {onReportar && (
+            {onReportar ? (
               <button
                 type="button"
                 onClick={() => onReportar(centro)}
-                className="w-full rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white"
+                className="rounded-md bg-red-600 px-2 py-1.5 text-[10px] font-bold text-white"
               >
-                Reportar necesidad aquí
+                Necesidad
               </button>
-            )}
-            {onVerLista && (
-              <button
-                type="button"
-                onClick={() => onVerLista(centro)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
-              >
-                Ver detalle y votos
-              </button>
+            ) : (
+              <span />
             )}
           </div>
+          {onVerLista && (
+            <button
+              type="button"
+              onClick={() => onVerLista(centro)}
+              className="mt-1 w-full text-center text-[10px] font-medium text-slate-600 underline"
+            >
+              Ver detalle y votos
+            </button>
+          )}
         </div>
       </Popup>
     </Marker>

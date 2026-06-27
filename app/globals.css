@@ -29,43 +29,37 @@ textarea {
   font-family: inherit;
 }
 
+/* Popup compacto: el mapa sigue draggable fuera de la tarjeta */
+.leaflet-popup.centro-popup {
+  pointer-events: none;
+}
+
+.leaflet-popup.centro-popup .leaflet-popup-content-wrapper {
+  pointer-events: auto;
+  border-radius: 10px;
+  padding: 0;
+}
+
 .leaflet-popup-content-wrapper {
   border-radius: 12px;
-  max-height: min(72dvh, 520px);
 }
 
 .leaflet-popup-content {
-  margin: 10px 12px;
-  font-size: 14px;
-  line-height: 1.4;
+  margin: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
   width: auto !important;
-  max-height: min(70dvh, 500px);
-  overflow: hidden;
-}
-
-.centro-popup-inner {
-  max-height: min(68dvh, 480px);
 }
 
 .centro-popup-scroll {
-  max-height: min(28dvh, 220px);
+  max-height: 4.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @media (max-width: 1023px) {
-  .leaflet-popup-content-wrapper {
-    max-height: calc(100dvh - 11.5rem);
-  }
-
-  .leaflet-popup-content {
-    max-height: calc(100dvh - 12rem);
-  }
-
-  .centro-popup-inner {
-    max-height: calc(100dvh - 12.5rem);
-  }
-
   .centro-popup-scroll {
-    max-height: min(24dvh, 180px);
+    max-height: 3.75rem;
   }
 }
 

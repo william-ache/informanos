@@ -288,12 +288,8 @@ function MapView({
         )}
       </MapContainer>
 
-      <div className="pointer-events-none absolute left-3 top-3 z-[1000] rounded-lg border border-red-500/50 bg-red-950/85 px-3 py-1.5 text-xs font-semibold text-red-200 shadow lg:top-4">
-        Zona activa: Estado Aragua
-      </div>
-
       {alertaZona && (
-        <div className="absolute left-3 right-3 top-12 z-[1001] rounded-xl border border-amber-500 bg-amber-950/95 px-4 py-3 text-sm font-medium text-amber-100 shadow-lg lg:top-14 lg:max-w-md">
+        <div className="absolute left-3 right-3 top-3 z-[1001] rounded-xl border border-amber-500 bg-amber-950/95 px-4 py-3 text-sm font-medium text-amber-100 shadow-lg lg:max-w-md">
           {alertaZona}
         </div>
       )}
