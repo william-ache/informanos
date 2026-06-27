@@ -31,9 +31,17 @@ export const ARAGUA_POLYGON: [number, number][] = [
   [10.518, -67.745],
 ];
 
-/** Área metropolitana de Caracas [lat, lng] */
+/** Área metropolitana de Caracas + costa (La Guaira, Maiquetía, etc.) [lat, lng] */
 export const CARACAS_POLYGON: [number, number][] = [
-  [10.545, -67.080],
+  [10.635, -67.055],
+  [10.625, -66.995],
+  [10.615, -66.955],
+  [10.605, -66.915],
+  [10.618, -66.865],
+  [10.635, -66.805],
+  [10.628, -66.755],
+  [10.595, -66.725],
+  [10.555, -66.735],
   [10.535, -66.780],
   [10.495, -66.745],
   [10.455, -66.760],
@@ -42,7 +50,10 @@ export const CARACAS_POLYGON: [number, number][] = [
   [10.395, -67.020],
   [10.435, -67.080],
   [10.485, -67.095],
-  [10.545, -67.080],
+  [10.530, -67.085],
+  [10.575, -67.070],
+  [10.610, -67.060],
+  [10.635, -67.055],
 ];
 
 export const ZONA_CONFIG: Record<ZonaId, ZonaConfig> = {
@@ -59,8 +70,8 @@ export const ZONA_CONFIG: Record<ZonaId, ZonaConfig> = {
     id: "caracas",
     label: "Caracas",
     shortLabel: "Caracas",
-    center: [10.48, -66.88],
-    zoom: 11,
+    center: [10.52, -66.89],
+    zoom: 10,
     polygon: CARACAS_POLYGON,
     color: "#2563eb",
   },
