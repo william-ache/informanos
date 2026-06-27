@@ -23,6 +23,10 @@ const StreamingChat = dynamic(() => import("@/components/StreamingChat"), {
   loading: () => null,
 });
 
+const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
+  ssr: false,
+});
+
 const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
   ssr: false,
 });
@@ -210,24 +214,11 @@ export default function HomeApp() {
                       {(centro.necesidades ?? []).length > 0 && (
                         <ul className="mt-2 space-y-2 border-t border-slate-800 pt-2">
                           {(centro.necesidades ?? []).map((nec) => (
-                            <li key={nec.id} className="text-sm text-slate-300">
-                              <span
-                                className={
-                                  nec.urgencia === "alta"
-                                    ? "font-bold text-red-400"
-                                    : nec.urgencia === "media"
-                                      ? "text-amber-400"
-                                      : "text-emerald-400"
-                                }
-                              >
-                                {nec.urgencia.toUpperCase()}
-                              </span>
-                              {" · "}
-                              {nec.elemento} ({nec.cantidad_solicitada})
-                              <span className="block text-xs text-slate-500">
-                                {formatFechaHumana(nec.actualizado_en)}
-                              </span>
-                            </li>
+                            <NecesidadVotos
+                              key={nec.id}
+                              centro={centro}
+                              necesidad={nec}
+                            />
                           ))}
                         </ul>
                       )}
