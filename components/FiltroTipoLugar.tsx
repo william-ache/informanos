@@ -4,6 +4,7 @@ import type { FiltroTipoLugar } from "@/lib/tipo-lugar";
 import {
   filtroTipoLugarActivo,
   TIPO_LUGAR_OPCIONES,
+  TIPOS_LUGAR,
 } from "@/lib/tipo-lugar";
 import type { TipoLugar } from "@/types/database";
 
@@ -14,23 +15,49 @@ interface FiltroTipoLugarProps {
   compact?: boolean;
 }
 
+const filtroVacio: FiltroTipoLugar = {
+  acopio: false,
+  urgencia: false,
+  donacion: false,
+  peligro: false,
+};
+
+function filtroSolo(tipo: TipoLugar): FiltroTipoLugar {
+  return { ...filtroVacio, [tipo]: true };
+}
+
+function filtroTodos(): FiltroTipoLugar {
+  return { acopio: true, urgencia: true, donacion: true, peligro: true };
+}
+
 export default function FiltroTipoLugar({
   value,
   onChange,
   className = "",
   compact = false,
 }: FiltroTipoLugarProps) {
-  function toggle(tipo: TipoLugar) {
-    onChange({ ...value, [tipo]: !value[tipo] });
+  const filtrado = filtroTipoLugarActivo(value);
+
+  function seleccionar(tipo: TipoLugar) {
+    const todosVisibles = TIPOS_LUGAR.every((t) => value[t]);
+
+    if (todosVisibles) {
+      onChange(filtroSolo(tipo));
+      return;
+    }
+
+    if (value[tipo]) {
+      const reducido = { ...value, [tipo]: false };
+      const quedaAlguno = TIPOS_LUGAR.some((t) => reducido[t]);
+      onChange(quedaAlguno ? reducido : filtroTodos());
+      return;
+    }
+
+    onChange({ ...value, [tipo]: true });
   }
 
-  function limpiar() {
-    onChange({
-      acopio: true,
-      urgencia: true,
-      donacion: true,
-      peligro: true,
-    });
+  function verTodos() {
+    onChange(filtroTodos());
   }
 
   return (
@@ -40,26 +67,26 @@ export default function FiltroTipoLugar({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Filtrar por tipo de lugar
           </p>
-          {filtroTipoLugarActivo(value) && (
+          {filtrado && (
             <button
               type="button"
-              onClick={limpiar}
-              className="text-[11px] text-red-400 underline"
+              onClick={verTodos}
+              className="text-[11px] font-semibold text-red-400 underline"
             >
-              Todos
+              Ver todos
             </button>
           )}
         </div>
       )}
-      <div className={`flex flex-wrap ${compact ? "gap-1" : "gap-2"}`}>
+      <div className={`flex flex-wrap items-center ${compact ? "gap-1" : "gap-2"}`}>
         {TIPO_LUGAR_OPCIONES.map(({ value: tipo, short, color }) => {
           const activo = value[tipo];
           return (
             <button
               key={tipo}
               type="button"
-              onClick={() => toggle(tipo)}
-              className={`rounded-full border font-semibold transition ${
+              onClick={() => seleccionar(tipo)}
+              className={`rounded-full border font-semibold transition active:scale-95 ${
                 compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]"
               } ${
                 activo
@@ -72,13 +99,17 @@ export default function FiltroTipoLugar({
             </button>
           );
         })}
-        {compact && filtroTipoLugarActivo(value) && (
+        {compact && (
           <button
             type="button"
-            onClick={limpiar}
-            className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+            onClick={verTodos}
+            className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+              filtrado
+                ? "border-red-700/60 bg-red-950/40 text-red-300"
+                : "border-slate-700 text-slate-500"
+            }`}
           >
-            Todos
+            Ver todos
           </button>
         )}
       </div>
