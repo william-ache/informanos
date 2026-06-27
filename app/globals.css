@@ -41,7 +41,7 @@ textarea {
 }
 
 .leaflet-popup.centro-popup .leaflet-popup-content {
-  margin: 8px 10px 8px 8px;
+  margin: 10px 12px 12px 10px;
 }
 
 .leaflet-popup.centro-popup .leaflet-popup-close-button {

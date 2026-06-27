@@ -63,8 +63,8 @@ function CentroMarkerItem({
         autoClose={false}
         className="centro-popup"
       >
-        <div className="centro-popup-inner w-[min(230px,calc(100vw-3rem))] text-slate-900">
-          <div className="pr-5">
+        <div className="centro-popup-inner w-[min(230px,calc(100vw-3rem))] px-0.5 pb-0.5 text-slate-900">
+          <div className="pr-6">
             <p className="line-clamp-2 text-[13px] font-bold leading-snug">
               {centro.nombre}
             </p>
@@ -90,7 +90,7 @@ function CentroMarkerItem({
             </p>
           )}
 
-          <div className="centro-popup-scroll mt-1.5 border-t border-slate-200 pt-1.5">
+          <div className="centro-popup-scroll mt-2 border-t border-slate-200 pt-2">
             {centro.necesidades && centro.necesidades.length > 0 ? (
               <ul className="space-y-1 text-[10px] leading-snug">
                 {centro.necesidades.map((nec) => (
@@ -111,12 +111,12 @@ function CentroMarkerItem({
             )}
           </div>
 
-          <div className="mt-1.5 space-y-1 border-t border-slate-200 pt-1.5">
-            <div className="grid grid-cols-2 gap-1">
+          <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={() => abrirEnGoogleMaps(centro.latitud, centro.longitud)}
-                className="centro-popup-btn rounded-md bg-blue-600 px-2 py-1.5 text-[10px] font-bold text-white"
+                className="centro-popup-btn rounded-md bg-blue-600 px-2.5 py-2 text-[10px] font-bold text-white"
               >
                 Como llegar
               </button>
@@ -124,7 +124,7 @@ function CentroMarkerItem({
                 <button
                   type="button"
                   onClick={() => onReportar(centro)}
-                  className="centro-popup-btn rounded-md bg-red-600 px-2 py-1.5 text-[10px] font-bold text-white"
+                  className="centro-popup-btn rounded-md bg-red-600 px-2.5 py-2 text-[10px] font-bold text-white"
                 >
                   Necesidad
                 </button>
@@ -134,7 +134,7 @@ function CentroMarkerItem({
               <button
                 type="button"
                 onClick={() => onReportarLugar(centro)}
-                className="centro-popup-btn w-full rounded-md border border-amber-400 bg-amber-50 px-2 py-1.5 text-[10px] font-bold text-amber-900"
+                className="centro-popup-btn w-full rounded-md border border-amber-400 bg-amber-50 px-2.5 py-2 text-[10px] font-bold text-amber-900"
               >
                 Reportar
               </button>
@@ -143,7 +143,7 @@ function CentroMarkerItem({
               <button
                 type="button"
                 onClick={() => onVerLista(centro)}
-                className="centro-popup-btn w-full rounded-md border border-slate-300 bg-slate-50 px-2 py-1.5 text-[10px] font-semibold text-slate-700"
+                className="centro-popup-btn w-full rounded-md border border-slate-300 bg-slate-50 px-2.5 py-2 text-[10px] font-semibold text-slate-700"
               >
                 Ver detalle y votos
               </button>
