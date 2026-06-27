@@ -68,8 +68,8 @@ CREATE TABLE IF NOT EXISTS visitas_ip (
   ultima_visita DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Usuario de aplicación (ajusta la contraseña en producción)
-CREATE USER IF NOT EXISTS 'informa'@'localhost' IDENTIFIED BY 'informa_aragua_secure';
+-- Usuario de aplicación (requiere política MySQL: mayúscula, número, símbolo)
+CREATE USER IF NOT EXISTS 'informa'@'localhost' IDENTIFIED BY 'Informa@Aragua2026!';
 GRANT ALL PRIVILEGES ON informa_aragua.* TO 'informa'@'localhost';
 FLUSH PRIVILEGES;
 
