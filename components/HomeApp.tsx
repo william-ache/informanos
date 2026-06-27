@@ -67,6 +67,13 @@ const ReportarErrorModal = dynamic(
 const CENTROS_KEY = "/api/centros";
 
 type Tab = "mapa" | "centros" | "chat" | "reportar" | "errores";
+type DesktopPanel = "centros" | "reportar" | "chat";
+
+const desktopTabs: { id: DesktopPanel; label: string }[] = [
+  { id: "centros", label: "Centros" },
+  { id: "reportar", label: "Reportar" },
+  { id: "chat", label: "Chat" },
+];
 
 const tabs: { id: Tab; label: string; short: string }[] = [
   { id: "mapa", label: "Mapa", short: "M" },
@@ -96,6 +103,7 @@ export default function HomeApp() {
   const [accionError, setAccionError] = useState<string | null>(null);
   const [ultimoSync, setUltimoSync] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [desktopPanel, setDesktopPanel] = useState<DesktopPanel>("centros");
   const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
   const [agregarMenuOpen, setAgregarMenuOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
@@ -157,11 +165,13 @@ export default function HomeApp() {
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
     setNecesidadForm((prev) => ({ ...prev, centro_id: centro.id }));
+    setDesktopPanel("reportar");
     setTab("reportar");
   }, []);
 
   const verCentroEnLista = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
+    setDesktopPanel("centros");
     setTab("centros");
   }, []);
 
@@ -225,7 +235,8 @@ export default function HomeApp() {
 
       setNecesidadForm(emptyNecesidad);
       await mutate(CENTROS_KEY);
-      setTab("centros");
+      if (isDesktop) setDesktopPanel("centros");
+      else setTab("centros");
     } catch (err) {
       setAccionError(err instanceof Error ? err.message : "Error al guardar.");
     } finally {
@@ -243,48 +254,84 @@ export default function HomeApp() {
   return (
     <div className="flex h-dvh flex-col bg-slate-950 text-slate-100 lg:flex-row">
       {isDesktop && (
-        <aside className="flex w-full max-w-md flex-col border-r border-slate-800 bg-slate-900">
-          <header className="border-b border-slate-800 p-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-red-400">
-              Emergencia · Estado Aragua
-            </p>
-            <h1 className="mt-1 text-xl font-bold">Centros de Acopio</h1>
-            <p className="mt-1 text-sm text-slate-400">
-              {centros.length} activos · {urgentes} urgentes
-              {syncLabel && (
-                <span className="block text-emerald-400">Sync: {syncLabel}</span>
+        <aside className="flex min-h-0 w-[min(420px,36vw)] min-w-[340px] max-w-md flex-col border-r border-slate-800 bg-slate-900">
+          <header className="shrink-0 border-b border-slate-800 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-widest text-red-400">
+                  Emergencia · Estado Aragua
+                </p>
+                <h1 className="mt-1 text-xl font-bold">Centros de Acopio</h1>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorModalOpen(true)}
+                className="shrink-0 rounded-lg border border-amber-800/50 bg-amber-950/40 px-2.5 py-1.5 text-[11px] font-semibold text-amber-300 hover:bg-amber-950/60"
+              >
+                Reportar
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+              <span>{centros.length} activos</span>
+              {urgentes > 0 && (
+                <span className="font-semibold text-red-400">{urgentes} urgentes</span>
               )}
-            </p>
-            <PresenceStats />
+              {syncLabel && <span className="text-emerald-400">Sync {syncLabel}</span>}
+              <PresenceStats />
+            </div>
           </header>
 
-          <CentrosList
-            centros={centros}
-            centrosFiltrados={centrosFiltrados}
-            centroActivoId={centroActivoId}
-            onSeleccionarCentro={setCentroActivoId}
-            onQueryChange={setTextoBusqueda}
-            filtroPoblacion={filtroPoblacion}
-            onFiltroPoblacionChange={setFiltroPoblacion}
-            isLoading={isLoading}
-            errorMsg={errorMsg}
-            onReportarCentro={abrirReporteCentro}
-          />
-          <ReportarForm
-            centros={centros}
-            form={necesidadForm}
-            onFormChange={setNecesidadForm}
-            onSubmit={agregarNecesidad}
-            guardando={guardandoNecesidad}
-          />
-          <div className="border-t border-slate-800 p-4">
-            <button
-              type="button"
-              onClick={() => setErrorModalOpen(true)}
-              className="w-full rounded-xl border border-amber-800/60 bg-amber-950/30 py-3 text-sm font-semibold text-amber-300 active:bg-amber-950/50"
-            >
-              Reportar error del sistema
-            </button>
+          <nav className="flex shrink-0 border-b border-slate-800">
+            {desktopTabs.map((item) => {
+              const active = desktopPanel === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setDesktopPanel(item.id)}
+                  className={`flex-1 py-2.5 text-sm font-medium transition ${
+                    active
+                      ? "border-b-2 border-red-500 text-red-300"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {desktopPanel === "centros" && (
+              <CentrosList
+                fillHeight
+                centros={centros}
+                centrosFiltrados={centrosFiltrados}
+                centroActivoId={centroActivoId}
+                onSeleccionarCentro={setCentroActivoId}
+                onQueryChange={setTextoBusqueda}
+                filtroPoblacion={filtroPoblacion}
+                onFiltroPoblacionChange={setFiltroPoblacion}
+                isLoading={isLoading}
+                errorMsg={errorMsg}
+                onReportarCentro={abrirReporteCentro}
+              />
+            )}
+
+            {desktopPanel === "reportar" && (
+              <ReportarForm
+                compact
+                centros={centros}
+                form={necesidadForm}
+                onFormChange={setNecesidadForm}
+                onSubmit={agregarNecesidad}
+                guardando={guardandoNecesidad}
+              />
+            )}
+
+            {desktopPanel === "chat" && (
+              <StreamingChat fullHeight hideHeader />
+            )}
           </div>
         </aside>
       )}

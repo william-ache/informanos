@@ -54,10 +54,12 @@ export default function FiltroPoblacion({
           </button>
         )}
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2 lg:grid-cols-2 lg:gap-3">
         {campos.map(({ key, label, short }) => (
           <label key={key} className="block">
-            <span className="mb-1 block text-[10px] text-slate-500">{short}</span>
+            <span className="mb-1 block text-[10px] text-slate-500 lg:text-xs">
+              {short}
+            </span>
             <input
               type="text"
               inputMode="numeric"
@@ -66,7 +68,7 @@ export default function FiltroPoblacion({
               aria-label={label}
               value={value[key]}
               onChange={(e) => actualizar(key, e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-1.5 py-2 text-center text-sm text-slate-100 outline-none focus:border-red-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-1.5 py-2 text-center text-sm text-slate-100 outline-none focus:border-red-500 lg:px-3 lg:py-2.5"
             />
           </label>
         ))}

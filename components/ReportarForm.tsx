@@ -39,7 +39,7 @@ export default function ReportarForm({
   return (
     <form
       onSubmit={onSubmit}
-      className={`overflow-y-auto bg-slate-900 ${compact ? "flex h-full flex-col p-4" : "border-t border-slate-800 p-4"}`}
+      className={`overflow-y-auto bg-slate-900 ${compact ? "flex h-full min-h-0 flex-col p-4 lg:p-5" : "border-t border-slate-800 p-4"}`}
     >
       <p className="mb-1 text-lg font-bold text-red-300">Registrar necesidad</p>
       <p className="mb-4 text-sm text-slate-400">

@@ -19,6 +19,7 @@ const NecesidadVotos = dynamic(() => import("@/components/NecesidadVotos"), {
 
 interface CentrosListProps {
   compact?: boolean;
+  fillHeight?: boolean;
   centros: CentroAcopio[];
   centrosFiltrados: CentroAcopio[];
   centroActivoId: string | null;
@@ -33,6 +34,7 @@ interface CentrosListProps {
 
 export default function CentrosList({
   compact = false,
+  fillHeight = false,
   centros,
   centrosFiltrados,
   centroActivoId,
@@ -44,9 +46,21 @@ export default function CentrosList({
   errorMsg,
   onReportarCentro,
 }: CentrosListProps) {
-  return (
+  const filtersWrap = compact
+    ? "space-y-3 px-4 pt-3"
+    : fillHeight
+      ? "shrink-0 space-y-3 border-b border-slate-800 p-4 pb-3"
+      : "space-y-3 border-b border-slate-800 p-4";
+
+  const listWrap = fillHeight
+    ? "min-h-0 flex-1 overflow-y-auto p-4 pt-2"
+    : compact
+      ? "flex-1 overflow-y-auto px-4 py-3"
+      : "min-h-0 flex-1 overflow-y-auto p-4";
+
+  const content = (
     <>
-      <div className={compact ? "space-y-3 px-4 pt-3" : "space-y-3 border-b border-slate-800 p-4"}>
+      <div className={filtersWrap}>
         <CentroBuscador
           centros={centros}
           activoId={centroActivoId}
@@ -57,7 +71,7 @@ export default function CentrosList({
         <FiltroPoblacion value={filtroPoblacion} onChange={onFiltroPoblacionChange} />
       </div>
 
-      <div className={`overflow-y-auto ${compact ? "flex-1 px-4 py-3" : "min-h-0 flex-1 p-4"}`}>
+      <div className={listWrap}>
         {isLoading && <p className="text-sm text-slate-400">Cargando centros…</p>}
         {errorMsg && (
           <p className="mb-3 rounded-xl border border-red-800 bg-red-950/50 p-3 text-sm text-red-300">
@@ -138,4 +152,10 @@ export default function CentrosList({
       </div>
     </>
   );
+
+  if (fillHeight) {
+    return <div className="flex min-h-0 flex-1 flex-col">{content}</div>;
+  }
+
+  return content;
 }
