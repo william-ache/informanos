@@ -601,11 +601,10 @@ export default function HomeApp() {
         <button
           type="button"
           onClick={() => setErrorModalOpen(true)}
-          className="fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-3 z-40 flex h-11 items-center gap-1.5 rounded-full border border-amber-700/60 bg-amber-950/90 px-3.5 text-xs font-bold text-amber-200 shadow-lg backdrop-blur active:scale-95 lg:bottom-6"
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-amber-700/60 bg-amber-950/90 text-lg text-amber-200 shadow-lg backdrop-blur active:scale-95"
           aria-label="Reportar error"
         >
-          <span className="text-sm">⚠</span>
-          Errores
+          ⚠
         </button>
       )}
 
