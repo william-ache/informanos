@@ -64,6 +64,21 @@ export async function ensureSchema(): Promise<void> {
         // ignorar si ya aplicado
       }
 
+      const poblacionAlters = [
+        `ALTER TABLE centros_acopio ADD COLUMN aprox_ninos INT NULL AFTER contacto`,
+        `ALTER TABLE centros_acopio ADD COLUMN aprox_personas INT NULL AFTER aprox_ninos`,
+        `ALTER TABLE centros_acopio ADD COLUMN aprox_ancianos INT NULL AFTER aprox_personas`,
+      ];
+
+      for (const sql of poblacionAlters) {
+        try {
+          await pool.query(sql);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (!message.includes("Duplicate column")) throw error;
+        }
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

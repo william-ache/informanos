@@ -5,6 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { formatFechaHumana } from "@/lib/formatFecha";
+import {
+  cumpleFiltroPoblacion,
+  filtroPoblacionVacio,
+  resumenPoblacion,
+  tienePoblacion,
+  type FiltroPoblacion as FiltroPoblacionState,
+} from "@/lib/poblacion";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { usePrivacidad } from "@/hooks/use-privacidad";
@@ -33,6 +40,10 @@ const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
 });
 
 const SearchableSelect = dynamic(() => import("@/components/SearchableSelect"), {
+  ssr: false,
+});
+
+const FiltroPoblacion = dynamic(() => import("@/components/FiltroPoblacion"), {
   ssr: false,
 });
 
@@ -87,6 +98,9 @@ export default function HomeApp() {
   const [centroActivoId, setCentroActivoId] = useState<string | null>(null);
   const [agregarMenuOpen, setAgregarMenuOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [filtroPoblacion, setFiltroPoblacion] = useState<FiltroPoblacionState>(
+    filtroPoblacionVacio,
+  );
   const pageVisible = usePageVisible();
   const { pendiente: privacidadPendiente } = usePrivacidad();
 
@@ -132,10 +146,11 @@ export default function HomeApp() {
             (c.direccion?.toLowerCase().includes(q) ?? false),
         );
       }
+      list = list.filter((c) => cumpleFiltroPoblacion(c, filtroPoblacion));
     }
 
     return list;
-  }, [centros, textoBusqueda, centroActivoId]);
+  }, [centros, textoBusqueda, centroActivoId, filtroPoblacion]);
 
   const abrirReporteCentro = useCallback((centro: CentroAcopio) => {
     setCentroActivoId(centro.id);
@@ -212,15 +227,15 @@ export default function HomeApp() {
   function CentrosList({ compact = false }: { compact?: boolean }) {
     return (
       <>
-        <div className={compact ? "px-4 pt-3" : "border-b border-slate-800 p-4"}>
+        <div className={compact ? "space-y-3 px-4 pt-3" : "space-y-3 border-b border-slate-800 p-4"}>
           <CentroBuscador
             centros={centros}
             activoId={centroActivoId}
             onSeleccionar={setCentroActivoId}
             onQueryChange={setTextoBusqueda}
             placeholder="Buscar por nombre o municipio…"
-            className={compact ? "" : "mt-0"}
           />
+          <FiltroPoblacion value={filtroPoblacion} onChange={setFiltroPoblacion} />
         </div>
 
         <div className={`overflow-y-auto ${compact ? "flex-1 px-4 py-3" : "min-h-0 flex-1 p-4"}`}>
@@ -257,6 +272,11 @@ export default function HomeApp() {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold leading-snug">{centro.nombre}</p>
                       <p className="text-sm text-slate-400">{centro.municipio}</p>
+                      {tienePoblacion(centro) && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          👥 {resumenPoblacion(centro)}
+                        </p>
+                      )}
                       {centro.contacto && (
                         <a
                           href={`tel:${centro.contacto.replace(/\s/g, "")}`}
@@ -440,6 +460,7 @@ export default function HomeApp() {
             onSeleccionar={setCentroActivoId}
             placeholder="Buscar lugar…"
           />
+          <FiltroPoblacion value={filtroPoblacion} onChange={setFiltroPoblacion} />
           <button
             type="button"
             onClick={() => setAgregarMenuOpen(true)}
@@ -460,7 +481,7 @@ export default function HomeApp() {
         >
           <Map
             active={mapActive}
-            centros={centros}
+            centros={centrosFiltrados}
             centroActivoId={centroActivoId}
             onReportarCentro={abrirReporteCentro}
             onVerCentroLista={verCentroEnLista}

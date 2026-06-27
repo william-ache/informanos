@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS centros_acopio (
   latitud    DECIMAL(10, 8) NOT NULL,
   longitud   DECIMAL(10, 8) NOT NULL,
   contacto   VARCHAR(500) NULL,
+  aprox_ninos INT NULL,
+  aprox_personas INT NULL,
+  aprox_ancianos INT NULL,
   creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -101,7 +104,7 @@ SET @id_maracay = 'a1000000-0000-4000-8000-000000000001';
 SET @id_turmero  = 'a1000000-0000-4000-8000-000000000002';
 SET @id_limon    = 'a1000000-0000-4000-8000-000000000003';
 
-INSERT INTO centros_acopio (id, nombre, municipio, direccion, latitud, longitud, contacto)
+INSERT INTO centros_acopio (id, nombre, municipio, direccion, latitud, longitud, contacto, aprox_ninos, aprox_personas, aprox_ancianos)
 VALUES
   (
     @id_maracay,
@@ -110,7 +113,10 @@ VALUES
     'Av. Las Delicias, Parque Los Aviadores',
     10.24690000,
     -67.59580000,
-    '+58 244-555-0101'
+    '+58 244-555-0101',
+    45,
+    120,
+    18
   ),
   (
     @id_turmero,
@@ -119,7 +125,10 @@ VALUES
     'Plaza Bolívar, frente a la Alcaldía',
     10.22860000,
     -67.47420000,
-    '+58 244-555-0202'
+    '+58 244-555-0202',
+    30,
+    85,
+    22
   ),
   (
     @id_limon,
@@ -128,7 +137,10 @@ VALUES
     'Av. Principal El Limón, sector La Candelaria',
     10.30330000,
     -67.42500000,
-    '+58 244-555-0303'
+    '+58 244-555-0303',
+    20,
+    60,
+    15
   );
 
 INSERT INTO necesidades (centro_id, elemento, cantidad_solicitada, urgencia)

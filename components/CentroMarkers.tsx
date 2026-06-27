@@ -5,6 +5,7 @@ import { Marker, Popup } from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
+import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
 import type { CentroAcopio } from "@/types/database";
 
 function urgenciaClass(urgencia: string) {
@@ -56,6 +57,12 @@ function CentroMarkerItem({
         <div className="min-w-[220px] max-w-[280px] text-slate-900">
           <p className="font-bold leading-tight">{centro.nombre}</p>
           <p className="mt-1 text-sm text-slate-600">{centro.municipio}</p>
+
+          {tienePoblacion(centro) && (
+            <p className="mt-1 text-xs text-slate-500">
+              👥 {resumenPoblacion(centro)}
+            </p>
+          )}
 
           {centro.contacto && (
             <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">

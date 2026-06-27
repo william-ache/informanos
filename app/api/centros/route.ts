@@ -15,6 +15,9 @@ interface CentroRow extends RowDataPacket {
   latitud: string | number;
   longitud: string | number;
   contacto: string | null;
+  aprox_ninos: number | null;
+  aprox_personas: number | null;
+  aprox_ancianos: number | null;
   creado_en: string;
 }
 
@@ -27,6 +30,11 @@ function mapCentro(row: CentroRow, necesidades: Necesidad[]): CentroAcopio {
     latitud: Number(row.latitud),
     longitud: Number(row.longitud),
     contacto: row.contacto,
+    aprox_ninos: row.aprox_ninos === null ? null : Number(row.aprox_ninos),
+    aprox_personas:
+      row.aprox_personas === null ? null : Number(row.aprox_personas),
+    aprox_ancianos:
+      row.aprox_ancianos === null ? null : Number(row.aprox_ancianos),
     creado_en: row.creado_en,
     necesidades,
   };
@@ -40,7 +48,8 @@ export async function GET() {
     await ensureSchema();
 
     const [centrosRows] = await pool.query<CentroRow[]>(
-      `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto, creado_en
+      `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto,
+              aprox_ninos, aprox_personas, aprox_ancianos, creado_en
        FROM centros_acopio
        ORDER BY nombre ASC`,
     );
@@ -106,13 +115,18 @@ export async function POST(request: Request) {
         typeof body.contacto === "string" ? body.contacto.trim() || null : null,
       latitud,
       longitud,
+      aprox_ninos: parsePoblacion(body.aprox_ninos),
+      aprox_personas: parsePoblacion(body.aprox_personas),
+      aprox_ancianos: parsePoblacion(body.aprox_ancianos),
     };
 
     const id = randomUUID();
 
     await pool.execute(
-      `INSERT INTO centros_acopio (id, nombre, municipio, direccion, latitud, longitud, contacto)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO centros_acopio
+        (id, nombre, municipio, direccion, latitud, longitud, contacto,
+         aprox_ninos, aprox_personas, aprox_ancianos)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         centro.nombre,
@@ -121,11 +135,15 @@ export async function POST(request: Request) {
         centro.latitud,
         centro.longitud,
         centro.contacto,
+        centro.aprox_ninos,
+        centro.aprox_personas,
+        centro.aprox_ancianos,
       ],
     );
 
     const [rows] = await pool.query<CentroRow[]>(
-      `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto, creado_en
+      `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto,
+              aprox_ninos, aprox_personas, aprox_ancianos, creado_en
        FROM centros_acopio
        WHERE id = ?`,
       [id],
@@ -143,4 +161,11 @@ export async function POST(request: Request) {
   } catch (error) {
     return handleDbError(error);
   }
+}
+
+function parsePoblacion(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) return null;
+  return Math.floor(num);
 }

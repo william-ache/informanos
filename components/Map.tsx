@@ -15,6 +15,7 @@ import ModalPortal from "@/components/ModalPortal";
 import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
 import { detectarLugar } from "@/lib/geocoding";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
+import { parsePoblacionInput } from "@/lib/poblacion";
 import { configureLeafletIcons } from "@/lib/leaflet-icons";
 import "leaflet/dist/leaflet.css";
 
@@ -26,6 +27,9 @@ interface FormState {
   municipio: string;
   direccion: string;
   telefonos: string[];
+  aproxNinos: string;
+  aproxPersonas: string;
+  aproxAncianos: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -33,6 +37,9 @@ const emptyForm = (): FormState => ({
   municipio: "",
   direccion: "",
   telefonos: [""],
+  aproxNinos: "",
+  aproxPersonas: "",
+  aproxAncianos: "",
 });
 
 interface MapProps {
@@ -211,6 +218,9 @@ function MapView({
         contacto,
         latitud: coords.lat,
         longitud: coords.lng,
+        aprox_ninos: parsePoblacionInput(form.aproxNinos),
+        aprox_personas: parsePoblacionInput(form.aproxPersonas),
+        aprox_ancianos: parsePoblacionInput(form.aproxAncianos),
       });
       cerrarModal();
       setSeleccionMapa(false);
@@ -374,6 +384,42 @@ function MapView({
                   className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 />
               </label>
+
+              <div className="mt-3">
+                <p className="text-sm font-medium">Personas en el lugar (aprox.)</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Niños, jóvenes/adultos y ancianos — estimado a ojo.
+                </p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      ["aproxNinos", "Niños"],
+                      ["aproxPersonas", "Personas"],
+                      ["aproxAncianos", "Ancianos"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <label key={key} className="block text-center">
+                      <span className="mb-1 block text-[11px] text-slate-600">
+                        {label}
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="0"
+                        value={form[key]}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            [key]: e.target.value.replace(/\D/g, "").slice(0, 5),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-300 px-2 py-2.5 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
 
               <div className="mt-3">
                 <p className="text-sm font-medium">Teléfonos de contacto</p>

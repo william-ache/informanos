@@ -38,13 +38,24 @@ export interface CentroAcopio {
   latitud: number;
   longitud: number;
   contacto: string | null;
+  aprox_ninos: number | null;
+  aprox_personas: number | null;
+  aprox_ancianos: number | null;
   creado_en: string;
   necesidades?: Necesidad[];
 }
 
 export type NuevoCentroAcopio = Pick<
   CentroAcopio,
-  "nombre" | "municipio" | "direccion" | "contacto" | "latitud" | "longitud"
+  | "nombre"
+  | "municipio"
+  | "direccion"
+  | "contacto"
+  | "latitud"
+  | "longitud"
+  | "aprox_ninos"
+  | "aprox_personas"
+  | "aprox_ancianos"
 >;
 
 export interface ChatMensaje {
