@@ -2,7 +2,10 @@ export type TipoReporteError =
   | "error_sistema"
   | "info_erronea"
   | "info_falsa"
+  | "ubicacion_incorrecta"
   | "otro";
+
+export type TipoReporteCentro = Exclude<TipoReporteError, "error_sistema">;
 
 export interface ReporteError {
   id: string;

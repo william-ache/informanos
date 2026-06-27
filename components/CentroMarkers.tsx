@@ -18,6 +18,7 @@ interface CentroMarkersProps {
   centros: CentroAcopio[];
   centroActivoId?: string | null;
   onReportar?: (centro: CentroAcopio) => void;
+  onReportarLugar?: (centro: CentroAcopio) => void;
   onVerLista?: (centro: CentroAcopio) => void;
 }
 
@@ -26,12 +27,14 @@ function CentroMarkerItem({
   activo,
   abrirPopup,
   onReportar,
+  onReportarLugar,
   onVerLista,
 }: {
   centro: CentroAcopio;
   activo: boolean;
   abrirPopup?: boolean;
   onReportar?: (centro: CentroAcopio) => void;
+  onReportarLugar?: (centro: CentroAcopio) => void;
   onVerLista?: (centro: CentroAcopio) => void;
 }) {
   const markerRef = useRef<LeafletMarker>(null);
@@ -55,8 +58,21 @@ function CentroMarkerItem({
     >
       <Popup>
         <div className="min-w-[220px] max-w-[280px] text-slate-900">
-          <p className="font-bold leading-tight">{centro.nombre}</p>
-          <p className="mt-1 text-sm text-slate-600">{centro.municipio}</p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-bold leading-tight">{centro.nombre}</p>
+              <p className="mt-0.5 text-sm text-slate-600">{centro.municipio}</p>
+            </div>
+            {onReportarLugar && (
+              <button
+                type="button"
+                onClick={() => onReportarLugar(centro)}
+                className="shrink-0 rounded-md border border-amber-400 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800"
+              >
+                Reportar
+              </button>
+            )}
+          </div>
 
           {tienePoblacion(centro) && (
             <p className="mt-1 text-xs text-slate-500">
@@ -143,6 +159,7 @@ function CentroMarkersInner({
   centros,
   centroActivoId,
   onReportar,
+  onReportarLugar,
   onVerLista,
 }: CentroMarkersProps) {
   return (
@@ -154,6 +171,7 @@ function CentroMarkersInner({
           activo={!centroActivoId || centro.id === centroActivoId}
           abrirPopup={centroActivoId === centro.id}
           onReportar={onReportar}
+          onReportarLugar={onReportarLugar}
           onVerLista={onVerLista}
         />
       ))}

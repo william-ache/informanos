@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
+import { publicarEnChat } from "@/lib/chat-actividad";
 import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
 import type { CentroAcopio, Necesidad, NuevoCentroAcopio } from "@/types/database";
 
@@ -161,6 +162,11 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    await publicarEnChat(
+      `📍 Nuevo lugar: ${centro.nombre} · ${centro.municipio}`,
+      id,
+    );
 
     return NextResponse.json({ centro: mapCentro(created, []) }, { status: 201 });
   } catch (error) {

@@ -102,7 +102,7 @@ export async function ensureSchema(): Promise<void> {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS reportes_errores (
           id VARCHAR(36) NOT NULL PRIMARY KEY,
-          tipo ENUM('error_sistema', 'info_erronea', 'info_falsa', 'otro') NOT NULL,
+          tipo ENUM('error_sistema', 'info_erronea', 'info_falsa', 'ubicacion_incorrecta', 'otro') NOT NULL,
           descripcion TEXT NOT NULL,
           centro_id VARCHAR(36) NULL,
           contacto VARCHAR(200) NULL,
@@ -117,6 +117,21 @@ export async function ensureSchema(): Promise<void> {
             ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
+
+      try {
+        await pool.query(`
+          ALTER TABLE reportes_errores
+          MODIFY COLUMN tipo ENUM(
+            'error_sistema',
+            'info_erronea',
+            'info_falsa',
+            'ubicacion_incorrecta',
+            'otro'
+          ) NOT NULL
+        `);
+      } catch {
+        // ignorar si ya aplicado
+      }
     })();
   }
 

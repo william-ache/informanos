@@ -11,6 +11,7 @@ import {
 import CentroMarkers from "@/components/CentroMarkers";
 import AraguaBoundary from "@/components/AraguaBoundary";
 import AgregarLugarSheet from "@/components/AgregarLugarSheet";
+import ReportarCentroModal from "@/components/ReportarCentroModal";
 import ModalPortal from "@/components/ModalPortal";
 import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
 import { detectarLugar } from "@/lib/geocoding";
@@ -129,6 +130,9 @@ function MapView({
   const [enviando, setEnviando] = useState(false);
   const [cargandoLugar, setCargandoLugar] = useState(false);
   const [alertaZona, setAlertaZona] = useState<string | null>(null);
+  const [reportarCentro, setReportarCentro] = useState<CentroAcopio | null>(
+    null,
+  );
 
   useEffect(() => {
     configureLeafletIcons();
@@ -272,6 +276,7 @@ function MapView({
           centros={centros}
           centroActivoId={centroActivoId}
           onReportar={onReportarCentro}
+          onReportarLugar={setReportarCentro}
           onVerLista={onVerCentroLista}
         />
 
@@ -476,6 +481,12 @@ function MapView({
           </div>
         </ModalPortal>
       )}
+
+      <ReportarCentroModal
+        open={!!reportarCentro}
+        centro={reportarCentro}
+        onClose={() => setReportarCentro(null)}
+      />
     </div>
   );
 }

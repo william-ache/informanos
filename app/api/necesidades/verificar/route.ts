@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb } from "@/lib/api";
 import {
+  obtenerNombreCentro,
+  publicarEnChat,
+} from "@/lib/chat-actividad";
+import {
   mapNecesidad,
   NECESIDAD_SELECT,
   type NecesidadRow,
@@ -90,6 +94,17 @@ export async function POST(request: Request) {
           { status: 500 },
         );
       }
+
+      const nombreCentro =
+        (await obtenerNombreCentro(actualizada.centro_id)) ?? "un centro";
+      const accionTexto =
+        accion === "reportar_agotado"
+          ? `reportaron agotado: ${actualizada.elemento}`
+          : `confirmaron disponible: ${actualizada.elemento}`;
+      await publicarEnChat(
+        `👥 En «${nombreCentro}» ${accionTexto}${esTestigo ? " (testigo presencial)" : ""}`,
+        actualizada.centro_id,
+      );
 
       return NextResponse.json({ necesidad: mapNecesidad(actualizada) });
     } catch (error) {

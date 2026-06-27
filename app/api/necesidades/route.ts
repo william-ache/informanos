@@ -2,6 +2,10 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb } from "@/lib/api";
+import {
+  obtenerNombreCentro,
+  publicarEnChat,
+} from "@/lib/chat-actividad";
 import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
 import type { UrgenciaNivel } from "@/types/database";
 
@@ -60,6 +64,12 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    const nombreCentro = (await obtenerNombreCentro(centroId)) ?? "un centro";
+    await publicarEnChat(
+      `📦 Nueva necesidad en «${nombreCentro}»: ${elemento} (${cantidad}) · urgencia ${urgencia}`,
+      centroId,
+    );
 
     return NextResponse.json({ necesidad: mapNecesidad(created) }, { status: 201 });
   } catch (error) {

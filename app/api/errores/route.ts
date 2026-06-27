@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import type { RowDataPacket } from "mysql2";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb } from "@/lib/api";
+import {
+  ETIQUETA_TIPO_REPORTE,
+  obtenerNombreCentro,
+  publicarEnChat,
+} from "@/lib/chat-actividad";
 import { hashIp, obtenerIp } from "@/lib/presence";
 import type { TipoReporteError } from "@/types/database";
 
@@ -10,6 +15,7 @@ const TIPOS: TipoReporteError[] = [
   "error_sistema",
   "info_erronea",
   "info_falsa",
+  "ubicacion_incorrecta",
   "otro",
 ];
 
@@ -44,11 +50,12 @@ export async function POST(request: Request) {
     const userAgent =
       request.headers.get("user-agent")?.slice(0, 500) ?? null;
 
-    if (!tipo || descripcion.length < 10) {
+    if (!tipo || descripcion.length < (centroId ? 5 : 10)) {
       return NextResponse.json(
         {
-          error:
-            "Indica el tipo de reporte y una descripción de al menos 10 caracteres.",
+          error: centroId
+            ? "Indica el tipo y una descripción de al menos 5 caracteres."
+            : "Indica el tipo de reporte y una descripción de al menos 10 caracteres.",
         },
         { status: 400 },
       );
@@ -76,6 +83,17 @@ export async function POST(request: Request) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [id, tipo, descripcion, centroId, contacto, pagina, userAgent, ipHash],
     );
+
+    const etiqueta = ETIQUETA_TIPO_REPORTE[tipo] ?? tipo;
+    if (centroId) {
+      const nombre = (await obtenerNombreCentro(centroId)) ?? "un centro";
+      await publicarEnChat(
+        `⚠️ Reporte en «${nombre}»: ${etiqueta} — ${descripcion.slice(0, 140)}`,
+        centroId,
+      );
+    } else {
+      await publicarEnChat(`⚠️ ${etiqueta}: ${descripcion.slice(0, 160)}`);
+    }
 
     return NextResponse.json({ ok: true, id }, { status: 201 });
   } catch (error) {
