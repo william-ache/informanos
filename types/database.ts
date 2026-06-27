@@ -91,6 +91,8 @@ export type NuevoCentroAcopio = Pick<
 export interface ChatMensaje {
   id: string;
   centro_id: string | null;
+  centro_ref: string | null;
+  centro_activo: boolean | null;
   autor: string;
   mensaje: string;
   latitud: number | null;

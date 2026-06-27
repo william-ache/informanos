@@ -5,9 +5,9 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
+import { useCampanaInforma } from "@/hooks/use-campana-informa";
 import { swrDefaults } from "@/lib/swr-config";
-import { formatFechaHumana } from "@/lib/formatFecha";
-import { mensajeInformaConUbicacion } from "@/lib/chat-sistema";
+import ChatMensajeCard from "@/components/ChatMensajeCard";
 import type { ChatMensaje } from "@/types/database";
 
 const CHAT_KEY = "/api/chat";
@@ -40,9 +40,11 @@ export default function LiveChatOverlay({
     refreshInterval: pageVisible && !inputActivo ? 2000 : 0,
   });
 
+  const mensajes = data?.mensajes ?? [];
+  useCampanaInforma(mensajes);
+
   useEffect(() => {
-    const mensajes = data?.mensajes;
-    if (!mensajes) return;
+    if (!mensajes.length) return;
 
     if (!readyRef.current) {
       mensajes.forEach((m) => seenRef.current.add(m.id));
@@ -65,7 +67,7 @@ export default function LiveChatOverlay({
         }, 400);
       }, 7000);
     }
-  }, [data]);
+  }, [mensajes]);
 
   if (floats.length === 0) return null;
 
@@ -75,35 +77,16 @@ export default function LiveChatOverlay({
     <div
       className={`pointer-events-none absolute right-3 ${bottomClass} z-[950] flex w-[min(100%,20rem)] flex-col items-end gap-2`}
     >
-      {floats.map((msg) => {
-        const conUbicacion = mensajeInformaConUbicacion(msg) && !!onIrACentro;
-
-        return (
-          <article
-            key={msg.id}
-            role={conUbicacion ? "button" : undefined}
-            tabIndex={conUbicacion ? 0 : undefined}
-            onClick={
-              conUbicacion
-                ? () => onIrACentro!(msg.centro_id!)
-                : undefined
-            }
-            className={`pointer-events-auto w-full rounded-xl border bg-slate-950/95 px-3 py-2.5 shadow-xl backdrop-blur-sm ${
-              conUbicacion
-                ? "cursor-pointer border-amber-500/60 hover:bg-amber-950/40"
-                : "border-amber-500/40"
-            } ${msg.fadeOut ? "chat-float-exit" : "chat-float-enter"}`}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-bold text-amber-400">{msg.autor}</span>
-              <time className="text-[10px] text-slate-500">
-                {formatFechaHumana(msg.creado_en)}
-              </time>
-            </div>
-            <p className="mt-1 text-sm leading-snug text-slate-100">{msg.mensaje}</p>
-          </article>
-        );
-      })}
+      {floats.map((msg) => (
+        <div
+          key={msg.id}
+          className={`pointer-events-auto w-full ${
+            msg.fadeOut ? "chat-float-exit" : "chat-float-enter"
+          }`}
+        >
+          <ChatMensajeCard msg={msg} compact onIrACentro={onIrACentro} />
+        </div>
+      ))}
     </div>
   );
 }

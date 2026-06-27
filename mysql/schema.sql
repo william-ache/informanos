@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS necesidades (
 CREATE TABLE IF NOT EXISTS chat_mensajes (
   id         VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),
   centro_id  VARCHAR(36)  NULL,
+  centro_ref VARCHAR(36)  NULL,
   autor      VARCHAR(120) NOT NULL,
   mensaje    TEXT         NOT NULL,
   latitud    DECIMAL(10, 8) NULL,

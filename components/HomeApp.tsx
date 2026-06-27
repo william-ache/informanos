@@ -146,6 +146,7 @@ export default function HomeApp() {
   const [tipoLugarInicial, setTipoLugarInicial] = useState<TipoLugar | null>(
     null,
   );
+  const [mapUiModal, setMapUiModal] = useState(false);
   const [hintNuevoLugar, setHintNuevoLugar] = useState<string | null>(null);
   const [instalarAppOpen, setInstalarAppOpen] = useState(false);
   const pageVisible = usePageVisible();
@@ -374,6 +375,13 @@ export default function HomeApp() {
 
   const showMobileChat = !isDesktop && tab === "chat";
   const mapActive = isDesktop || tab === "mapa";
+  const flotantesOcultos =
+    errorModalOpen ||
+    adminOpen ||
+    privacidadPendiente ||
+    instalarAppOpen ||
+    agregarMenuOpen ||
+    mapUiModal;
 
   return (
     <div className="flex h-dvh flex-col bg-slate-950 text-slate-100 lg:flex-row">
@@ -540,6 +548,7 @@ export default function HomeApp() {
             agregarEnCentro={!isDesktop && tab === "mapa"}
             agregarMenuOpen={agregarMenuOpen}
             onAgregarMenuChange={setAgregarMenuOpen}
+            onUiModalChange={setMapUiModal}
             className="h-full"
           />
           {mapActive && (
@@ -605,7 +614,7 @@ export default function HomeApp() {
         )}
       </main>
 
-      {!isDesktop && (
+      {!isDesktop && !flotantesOcultos && (
         <button
           type="button"
           onClick={() => setErrorModalOpen(true)}

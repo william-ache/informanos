@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 
-import { AUTOR_SISTEMA } from "@/lib/chat-sistema";
+import { AUTOR_SISTEMA } from "@/lib/chat-sistema-constants";
 
 export async function publicarEnChat(
   mensaje: string,
@@ -12,9 +12,9 @@ export async function publicarEnChat(
   if (!texto) return;
 
   await pool.execute(
-    `INSERT INTO chat_mensajes (id, centro_id, autor, mensaje)
-     VALUES (?, ?, ?, ?)`,
-    [randomUUID(), centroId, AUTOR_SISTEMA, texto],
+    `INSERT INTO chat_mensajes (id, centro_id, centro_ref, autor, mensaje)
+     VALUES (?, ?, ?, ?, ?)`,
+    [randomUUID(), centroId, centroId, AUTOR_SISTEMA, texto],
   );
 }
 

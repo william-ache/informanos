@@ -6,14 +6,14 @@ import { fetcher } from "@/lib/fetcher";
 import { swrDefaults } from "@/lib/swr-config";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { useInputActivo } from "@/hooks/use-input-activo";
-import { formatFechaHumana } from "@/lib/formatFecha";
+import { useCampanaInforma } from "@/hooks/use-campana-informa";
 import {
   guardarChatAutor,
   limpiarChatAutor,
   obtenerChatAutor,
 } from "@/lib/chat-autor";
 import { datosExtendidosPermitidos } from "@/lib/privacidad";
-import { mensajeInformaConUbicacion } from "@/lib/chat-sistema";
+import ChatMensajeCard from "@/components/ChatMensajeCard";
 import type { ChatMensaje } from "@/types/database";
 
 interface ChatResponse {
@@ -54,6 +54,8 @@ export default function StreamingChat({
 
   const mensajes = data?.mensajes ?? [];
   const nombreGuardado = nombrePersistido && !editandoNombre;
+
+  useCampanaInforma(mensajes);
 
   useEffect(() => {
     const guardado = obtenerChatAutor();
@@ -154,56 +156,9 @@ export default function StreamingChat({
         {!isLoading && mensajes.length === 0 && (
           <p className="text-sm text-slate-500">Sin mensajes aún.</p>
         )}
-        {mensajes.map((msg) => {
-          const conUbicacion = mensajeInformaConUbicacion(msg) && !!onIrACentro;
-
-          return (
-            <article
-              key={msg.id}
-              role={conUbicacion ? "button" : undefined}
-              tabIndex={conUbicacion ? 0 : undefined}
-              onClick={
-                conUbicacion
-                  ? () => onIrACentro!(msg.centro_id!)
-                  : undefined
-              }
-              onKeyDown={
-                conUbicacion
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onIrACentro!(msg.centro_id!);
-                      }
-                    }
-                  : undefined
-              }
-              className={`rounded-xl border px-3 py-2.5 ${
-                conUbicacion
-                  ? "cursor-pointer border-amber-800/50 bg-amber-950/20 hover:bg-amber-950/30 active:bg-amber-950/40"
-                  : "border-slate-800 bg-slate-950/70"
-              }`}
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <span
-                  className={`text-sm font-semibold ${
-                    conUbicacion ? "text-amber-300" : "text-slate-200"
-                  }`}
-                >
-                  {msg.autor}
-                </span>
-                <time className="shrink-0 text-[11px] text-slate-500">
-                  {formatFechaHumana(msg.creado_en)}
-                </time>
-              </div>
-              <p className="mt-1 text-sm leading-relaxed text-slate-300">{msg.mensaje}</p>
-              {conUbicacion && (
-                <p className="mt-1.5 text-xs font-medium text-amber-400/90">
-                  Toca para ver en el mapa →
-                </p>
-              )}
-            </article>
-          );
-        })}
+        {mensajes.map((msg) => (
+          <ChatMensajeCard key={msg.id} msg={msg} onIrACentro={onIrACentro} />
+        ))}
       </div>
 
       <form onSubmit={enviarMensaje} className="border-t border-slate-800 bg-slate-950 p-3 pb-safe">

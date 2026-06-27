@@ -129,6 +129,23 @@ export async function ensureSchema(): Promise<void> {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
 
+      try {
+        await pool.query(
+          `ALTER TABLE chat_mensajes ADD COLUMN centro_ref VARCHAR(36) NULL AFTER centro_id`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Duplicate column")) throw error;
+      }
+
+      try {
+        await pool.query(
+          `UPDATE chat_mensajes SET centro_ref = centro_id WHERE centro_ref IS NULL AND centro_id IS NOT NULL`,
+        );
+      } catch {
+        // ignorar
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

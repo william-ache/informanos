@@ -6,6 +6,7 @@ import {
   obtenerNombreCentro,
   publicarEnChat,
 } from "@/lib/chat-actividad";
+import { aplicarUrgenciaCentroPorNecesidad } from "@/lib/centro-urgencia-auto";
 import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
 import type { UrgenciaNivel } from "@/types/database";
 
@@ -70,6 +71,8 @@ export async function POST(request: Request) {
       `📦 Nueva necesidad en «${nombreCentro}»: ${elemento} (${cantidad}) · urgencia ${urgencia}`,
       centroId,
     );
+
+    await aplicarUrgenciaCentroPorNecesidad(centroId, urgencia);
 
     return NextResponse.json({ necesidad: mapNecesidad(created) }, { status: 201 });
   } catch (error) {

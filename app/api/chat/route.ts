@@ -8,6 +8,8 @@ import type { ChatMensaje } from "@/types/database";
 interface ChatRow extends RowDataPacket {
   id: string;
   centro_id: string | null;
+  centro_ref: string | null;
+  centro_activo: number | null;
   autor: string;
   mensaje: string;
   latitud: string | number | null;
@@ -16,9 +18,12 @@ interface ChatRow extends RowDataPacket {
 }
 
 function mapChat(row: ChatRow): ChatMensaje {
+  const ref = row.centro_ref ?? row.centro_id;
   return {
     id: row.id,
     centro_id: row.centro_id,
+    centro_ref: row.centro_ref ?? row.centro_id,
+    centro_activo: ref ? row.centro_activo === 1 : null,
     autor: row.autor,
     mensaje: row.mensaje,
     latitud: row.latitud === null ? null : Number(row.latitud),
@@ -35,14 +40,17 @@ export async function GET() {
     await ensureSchema();
 
     const [rows] = await pool.query<ChatRow[]>(
-      `SELECT id, centro_id, autor, mensaje, latitud, longitud, creado_en
+      `SELECT m.id, m.centro_id, m.centro_ref, m.autor, m.mensaje, m.latitud, m.longitud, m.creado_en,
+              CASE WHEN c.id IS NOT NULL THEN 1 ELSE 0 END AS centro_activo
        FROM (
-         SELECT id, centro_id, autor, mensaje, latitud, longitud, creado_en
+         SELECT id, centro_id, centro_ref, autor, mensaje, latitud, longitud, creado_en
          FROM chat_mensajes
          ORDER BY creado_en DESC
          LIMIT 50
-       ) AS recientes
-       ORDER BY creado_en ASC`,
+       ) AS m
+       LEFT JOIN centros_acopio c
+         ON c.id = COALESCE(m.centro_ref, m.centro_id)
+       ORDER BY m.creado_en ASC`,
     );
 
     return NextResponse.json({ mensajes: rows.map(mapChat) });
@@ -83,15 +91,18 @@ export async function POST(request: Request) {
     const id = randomUUID();
 
     await pool.execute(
-      `INSERT INTO chat_mensajes (id, centro_id, autor, mensaje, latitud, longitud)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, centroId, autor, mensaje, latitud, longitud],
+      `INSERT INTO chat_mensajes (id, centro_id, centro_ref, autor, mensaje, latitud, longitud)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, centroId, centroId, autor, mensaje, latitud, longitud],
     );
 
     const [rows] = await pool.query<ChatRow[]>(
-      `SELECT id, centro_id, autor, mensaje, latitud, longitud, creado_en
-       FROM chat_mensajes
-       WHERE id = ?`,
+      `SELECT m.id, m.centro_id, m.centro_ref, m.autor, m.mensaje, m.latitud, m.longitud, m.creado_en,
+              CASE WHEN c.id IS NOT NULL THEN 1 ELSE 0 END AS centro_activo
+       FROM chat_mensajes m
+       LEFT JOIN centros_acopio c
+         ON c.id = COALESCE(m.centro_ref, m.centro_id)
+       WHERE m.id = ?`,
       [id],
     );
 

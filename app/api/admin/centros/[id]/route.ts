@@ -4,6 +4,7 @@ import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import { requireAdmin } from "@/lib/admin-auth";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
+import { publicarEnChat, obtenerNombreCentro } from "@/lib/chat-actividad";
 import { parseDonacionLimite, parseTipoLugar } from "@/lib/tipo-lugar";
 
 interface Params {
@@ -136,6 +137,9 @@ export async function PATCH(request: Request, { params }: Params) {
       valores,
     );
 
+    const nombre = (await obtenerNombreCentro(id)) ?? "un lugar";
+    await publicarEnChat(`✏️ Lugar actualizado: «${nombre}»`, id);
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     return handleDbError(error);
@@ -152,6 +156,10 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     await ensureSchema();
     const { id } = await params;
+
+    const nombre = (await obtenerNombreCentro(id)) ?? "un lugar";
+
+    await publicarEnChat(`🗑️ Lugar eliminado: «${nombre}»`, null);
 
     const [result] = await pool.execute(
       "DELETE FROM centros_acopio WHERE id = ?",

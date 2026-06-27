@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb } from "@/lib/api";
+import { aplicarUrgenciaCentroPorNecesidad } from "@/lib/centro-urgencia-auto";
 import type { NecesidadEstado, UrgenciaNivel } from "@/types/database";
 
 interface Params {
@@ -28,7 +29,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     const [existentes] = await pool.query<RowDataPacket[]>(
-      "SELECT id FROM necesidades WHERE id = ? LIMIT 1",
+      "SELECT id, centro_id, urgencia FROM necesidades WHERE id = ? LIMIT 1",
       [id],
     );
     if (!existentes[0]) {
@@ -64,6 +65,14 @@ export async function PATCH(request: Request, { params }: Params) {
       `UPDATE necesidades SET ${campos.join(", ")} WHERE id = ?`,
       valores,
     );
+
+    const centroId = String(existentes[0].centro_id);
+    const urgenciaFinal =
+      typeof body.urgencia === "string" && URGENCIAS.has(body.urgencia as UrgenciaNivel)
+        ? (body.urgencia as UrgenciaNivel)
+        : (existentes[0].urgencia as UrgenciaNivel);
+
+    await aplicarUrgenciaCentroPorNecesidad(centroId, urgenciaFinal);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

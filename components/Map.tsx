@@ -71,6 +71,7 @@ interface MapProps {
   agregarEnCentro?: boolean;
   agregarMenuOpen?: boolean;
   onAgregarMenuChange?: (open: boolean) => void;
+  onUiModalChange?: (open: boolean) => void;
 }
 
 function MapClickHandler({
@@ -167,6 +168,7 @@ function MapView({
   agregarEnCentro = false,
   agregarMenuOpen,
   onAgregarMenuChange,
+  onUiModalChange,
 }: MapProps) {
   const [menuInterno, setMenuInterno] = useState(false);
   const menuAgregar = agregarMenuOpen ?? menuInterno;
@@ -193,6 +195,12 @@ function MapView({
   useEffect(() => {
     configureLeafletIcons();
   }, []);
+
+  const hayModalMapa = modalAbierto || menuAgregar || !!reportarCentro;
+
+  useEffect(() => {
+    onUiModalChange?.(hayModalMapa);
+  }, [hayModalMapa, onUiModalChange]);
 
   useEffect(() => {
     if (!alertaZona) return;
@@ -372,7 +380,7 @@ function MapView({
         </div>
       )}
 
-      {agregarEnCentro && active && !modalAbierto && (
+      {agregarEnCentro && active && !hayModalMapa && (
         <>
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-[999] -translate-x-1/2"
