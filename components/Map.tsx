@@ -10,6 +10,7 @@ import {
 } from "react-leaflet";
 import CentroMarkers from "@/components/CentroMarkers";
 import AraguaBoundary from "@/components/AraguaBoundary";
+import ModalPortal from "@/components/ModalPortal";
 import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import { configureLeafletIcons } from "@/lib/leaflet-icons";
@@ -187,15 +188,16 @@ function MapView({
       )}
 
       {modalAbierto && coords && (
-        <div
-          className="fixed inset-0 z-[1100] flex items-end bg-black/60 lg:items-center lg:justify-center lg:p-4"
-          onClick={cerrarModal}
-        >
-          <form
-            onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 text-slate-900 shadow-2xl lg:max-w-md lg:rounded-2xl"
+        <ModalPortal open>
+          <div
+            className="fixed inset-0 z-[9999] flex items-end bg-black/60 lg:items-center lg:justify-center lg:p-4"
+            onClick={cerrarModal}
           >
+            <form
+              onSubmit={handleSubmit}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 pb-safe text-slate-900 shadow-2xl lg:max-w-md lg:rounded-2xl lg:pb-5"
+            >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 lg:hidden" />
             <h2 className="text-lg font-bold">Nuevo centro de acopio</h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -242,6 +244,7 @@ function MapView({
             </div>
           </form>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import useSWR, { mutate } from "swr";
 import StreamingChat from "@/components/StreamingChat";
+import ModalPortal from "@/components/ModalPortal";
 import { fetcher } from "@/lib/fetcher";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { swrDefaults } from "@/lib/swr-config";
@@ -101,7 +102,8 @@ export default function LiveChatOverlay({ showNavOffset = true }: LiveChatOverla
       </div>
 
       {historialAbierto && (
-        <div className="fixed inset-0 z-[1200] flex flex-col bg-slate-950">
+        <ModalPortal open>
+          <div className="fixed inset-0 z-[9999] flex flex-col bg-slate-950">
           <header className="flex shrink-0 items-center justify-between border-b border-slate-800 px-4 py-3 pt-safe">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">
@@ -124,6 +126,7 @@ export default function LiveChatOverlay({ showNavOffset = true }: LiveChatOverla
             <StreamingChat fullHeight hideHeader />
           </div>
         </div>
+        </ModalPortal>
       )}
     </>
   );

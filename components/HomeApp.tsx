@@ -400,7 +400,7 @@ export default function HomeApp() {
       </main>
 
       {!isDesktop && (
-        <nav className="flex shrink-0 border-t border-slate-800 bg-slate-950 pb-safe">
+        <nav className="relative z-30 flex shrink-0 border-t border-slate-800 bg-slate-950 pb-safe">
           {tabs.map((item) => {
             const active = tab === item.id;
             const badge = item.id === "centros" ? urgentes : 0;
