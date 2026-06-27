@@ -236,6 +236,22 @@ export async function ensureSchema(): Promise<void> {
 
       try {
         await pool.query(
+          `ALTER TABLE centros_acopio MODIFY COLUMN zona ENUM('aragua', 'caracas', 'miranda', 'carabobo', 'yaracuy') NOT NULL DEFAULT 'aragua'`,
+        );
+      } catch {
+        // ignorar si ya aplicado
+      }
+
+      try {
+        await pool.query(
+          `ALTER TABLE chat_mensajes MODIFY COLUMN zona ENUM('aragua', 'caracas', 'miranda', 'carabobo', 'yaracuy') NOT NULL DEFAULT 'aragua'`,
+        );
+      } catch {
+        // ignorar si ya aplicado
+      }
+
+      try {
+        await pool.query(
           `CREATE INDEX idx_centros_zona ON centros_acopio (zona)`,
         );
       } catch (error) {

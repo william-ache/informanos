@@ -1,4 +1,4 @@
-export type ZonaId = "aragua" | "caracas";
+export type ZonaId = "aragua" | "caracas" | "miranda" | "carabobo" | "yaracuy";
 
 export type TipoReporteError =
   | "error_sistema"

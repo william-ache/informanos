@@ -1,24 +1,17 @@
 "use client";
 
 import { Polygon } from "react-leaflet";
-import type { ZonaId } from "@/types/database";
-import { ZONA_CONFIG } from "@/lib/zones";
+import { IMPACT_POLYGON } from "@/lib/zones";
 
-interface ZoneBoundaryProps {
-  zona: ZonaId;
-}
-
-export default function ZoneBoundary({ zona }: ZoneBoundaryProps) {
-  const cfg = ZONA_CONFIG[zona];
-
+export default function ZoneBoundary() {
   return (
     <Polygon
-      positions={cfg.polygon}
+      positions={IMPACT_POLYGON}
       pathOptions={{
-        color: cfg.color,
+        color: "#dc2626",
         weight: 2.5,
-        fillOpacity: 0,
-        dashArray: "10 6",
+        fillColor: "#dc2626",
+        fillOpacity: 0.12,
         interactive: false,
       }}
     />
