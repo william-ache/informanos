@@ -41,6 +41,21 @@ export async function ensureSchema(): Promise<void> {
         }
       }
 
+      const necesidadAlters = [
+        `ALTER TABLE necesidades ADD COLUMN estado ENUM('disponible', 'agotado') NOT NULL DEFAULT 'disponible' AFTER urgencia`,
+        `ALTER TABLE necesidades ADD COLUMN reportes_agotado INT NOT NULL DEFAULT 0 AFTER estado`,
+        `ALTER TABLE necesidades ADD COLUMN reportes_confirmados INT NOT NULL DEFAULT 0 AFTER reportes_agotado`,
+      ];
+
+      for (const sql of necesidadAlters) {
+        try {
+          await pool.query(sql);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (!message.includes("Duplicate column")) throw error;
+        }
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

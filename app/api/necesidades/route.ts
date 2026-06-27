@@ -1,24 +1,16 @@
-import type { RowDataPacket } from "mysql2";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import pool from "@/lib/db";
+import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb } from "@/lib/api";
-import type { Necesidad, UrgenciaNivel } from "@/types/database";
-
-interface NecesidadRow extends RowDataPacket {
-  id: string;
-  centro_id: string;
-  elemento: string;
-  cantidad_solicitada: string;
-  urgencia: UrgenciaNivel;
-  actualizado_en: string;
-}
+import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
+import type { UrgenciaNivel } from "@/types/database";
 
 export async function POST(request: Request) {
   const configError = requireDb();
   if (configError) return configError;
 
   try {
+    await ensureSchema();
     const body = parseJsonBody<Record<string, unknown>>(await request.json());
     if (!body) {
       return NextResponse.json({ error: "Cuerpo JSON inválido." }, { status: 400 });
@@ -55,7 +47,7 @@ export async function POST(request: Request) {
     );
 
     const [rows] = await pool.query<NecesidadRow[]>(
-      `SELECT id, centro_id, elemento, cantidad_solicitada, urgencia, actualizado_en
+      `SELECT ${NECESIDAD_SELECT}
        FROM necesidades
        WHERE id = ?`,
       [id],
@@ -69,16 +61,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const necesidad: Necesidad = {
-      id: created.id,
-      centro_id: created.centro_id,
-      elemento: created.elemento,
-      cantidad_solicitada: created.cantidad_solicitada,
-      urgencia: created.urgencia,
-      actualizado_en: created.actualizado_en,
-    };
-
-    return NextResponse.json({ necesidad }, { status: 201 });
+    return NextResponse.json({ necesidad: mapNecesidad(created) }, { status: 201 });
   } catch (error) {
     return handleDbError(error);
   }

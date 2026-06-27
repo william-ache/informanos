@@ -2,8 +2,9 @@ import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2";
 import { NextResponse } from "next/server";
 import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
-import pool from "@/lib/db";
+import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
+import { mapNecesidad, NECESIDAD_SELECT, type NecesidadRow } from "@/lib/necesidad-map";
 import type { CentroAcopio, Necesidad, NuevoCentroAcopio } from "@/types/database";
 
 interface CentroRow extends RowDataPacket {
@@ -15,26 +16,6 @@ interface CentroRow extends RowDataPacket {
   longitud: string | number;
   contacto: string | null;
   creado_en: string;
-}
-
-interface NecesidadRow extends RowDataPacket {
-  id: string;
-  centro_id: string;
-  elemento: string;
-  cantidad_solicitada: string;
-  urgencia: Necesidad["urgencia"];
-  actualizado_en: string;
-}
-
-function mapNecesidad(row: NecesidadRow): Necesidad {
-  return {
-    id: row.id,
-    centro_id: row.centro_id,
-    elemento: row.elemento,
-    cantidad_solicitada: row.cantidad_solicitada,
-    urgencia: row.urgencia,
-    actualizado_en: row.actualizado_en,
-  };
 }
 
 function mapCentro(row: CentroRow, necesidades: Necesidad[]): CentroAcopio {
@@ -56,6 +37,8 @@ export async function GET() {
   if (configError) return configError;
 
   try {
+    await ensureSchema();
+
     const [centrosRows] = await pool.query<CentroRow[]>(
       `SELECT id, nombre, municipio, direccion, latitud, longitud, contacto, creado_en
        FROM centros_acopio
@@ -63,7 +46,7 @@ export async function GET() {
     );
 
     const [necesidadesRows] = await pool.query<NecesidadRow[]>(
-      `SELECT id, centro_id, elemento, cantidad_solicitada, urgencia, actualizado_en
+      `SELECT ${NECESIDAD_SELECT}
        FROM necesidades
        ORDER BY actualizado_en DESC`,
     );

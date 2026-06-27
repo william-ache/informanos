@@ -76,6 +76,7 @@ Abre [http://localhost:3000](http://localhost:3000).
 |--------------------|-----------|--------------------------------|
 | `/api/centros`     | GET, POST | Listar / registrar centros     |
 | `/api/necesidades` | POST      | Registrar necesidad            |
+| `/api/necesidades/verificar` | POST | Voto comunitario (disponible/agotado) |
 | `/api/chat`        | GET, POST | Mensajes del chat              |
 | `/api/presence`    | GET, POST | Estadísticas y heartbeat       |
 

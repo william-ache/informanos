@@ -1,4 +1,6 @@
 export type UrgenciaNivel = "alta" | "media" | "baja";
+export type NecesidadEstado = "disponible" | "agotado";
+export type VerificarAccion = "confirmar_disponible" | "reportar_agotado";
 
 export interface Necesidad {
   id: string;
@@ -6,6 +8,9 @@ export interface Necesidad {
   elemento: string;
   cantidad_solicitada: string;
   urgencia: UrgenciaNivel;
+  estado: NecesidadEstado;
+  reportes_agotado: number;
+  reportes_confirmados: number;
   actualizado_en: string;
 }
 

@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS necesidades (
   elemento            VARCHAR(255) NOT NULL,
   cantidad_solicitada VARCHAR(255) NOT NULL,
   urgencia            ENUM('alta', 'media', 'baja') NOT NULL DEFAULT 'media',
+  estado              ENUM('disponible', 'agotado') NOT NULL DEFAULT 'disponible',
+  reportes_agotado    INT NOT NULL DEFAULT 0,
+  reportes_confirmados INT NOT NULL DEFAULT 0,
   actualizado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_necesidades_centro
     FOREIGN KEY (centro_id) REFERENCES centros_acopio (id)
