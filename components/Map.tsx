@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   Marker,
@@ -68,6 +68,7 @@ interface MapProps {
   className?: string;
   active?: boolean;
   hideAgregarButton?: boolean;
+  agregarEnCentro?: boolean;
   agregarMenuOpen?: boolean;
   onAgregarMenuChange?: (open: boolean) => void;
 }
@@ -119,6 +120,38 @@ function MapFlyTo({
   return null;
 }
 
+function MapCenterTracker({
+  active,
+  onCenterChange,
+}: {
+  active: boolean;
+  onCenterChange: (lat: number, lng: number) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!active) return;
+
+    const actualizar = () => {
+      const c = map.getCenter();
+      onCenterChange(c.lat, c.lng);
+    };
+
+    actualizar();
+    map.on("move", actualizar);
+    map.on("zoomend", actualizar);
+    map.on("resize", actualizar);
+
+    return () => {
+      map.off("move", actualizar);
+      map.off("zoomend", actualizar);
+      map.off("resize", actualizar);
+    };
+  }, [active, map, onCenterChange]);
+
+  return null;
+}
+
 function MapView({
   centros,
   centroActivoId,
@@ -131,6 +164,7 @@ function MapView({
   className = "",
   active = true,
   hideAgregarButton = false,
+  agregarEnCentro = false,
   agregarMenuOpen,
   onAgregarMenuChange,
 }: MapProps) {
@@ -150,6 +184,11 @@ function MapView({
   const [reportarCentro, setReportarCentro] = useState<CentroAcopio | null>(
     null,
   );
+  const centroMapaRef = useRef({ lat: ARAGUA_CENTER[0], lng: ARAGUA_CENTER[1] });
+
+  const onCentroMapaChange = useCallback((lat: number, lng: number) => {
+    centroMapaRef.current = { lat, lng };
+  }, []);
 
   useEffect(() => {
     configureLeafletIcons();
@@ -311,6 +350,9 @@ function MapView({
           <MapFlyTo lat={centroActivo.latitud} lng={centroActivo.longitud} />
         )}
         <MapClickHandler active={seleccionMapa} onMapClick={handleMapClick} />
+        {agregarEnCentro && active && (
+          <MapCenterTracker active onCenterChange={onCentroMapaChange} />
+        )}
         <CentroMarkers
           centros={centros}
           centroActivoId={centroActivoId}
@@ -330,7 +372,34 @@ function MapView({
         </div>
       )}
 
-      {!hideAgregarButton && (
+      {agregarEnCentro && active && !modalAbierto && (
+        <>
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 z-[999] -translate-x-1/2"
+            style={{ marginTop: "-13px" }}
+          >
+            <div
+              className="centro-marker-pin shadow-md"
+              style={{ backgroundColor: "#2563eb" }}
+            />
+          </div>
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-[1000] -translate-x-1/2 -translate-y-[calc(100%+2.75rem)]">
+            <button
+              type="button"
+              onClick={() => {
+                const { lat, lng } = centroMapaRef.current;
+                void abrirFormulario(lat, lng);
+              }}
+              className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-2xl font-bold leading-none text-white shadow-lg active:scale-95"
+              aria-label="Agregar lugar aquí"
+            >
+              +
+            </button>
+          </div>
+        </>
+      )}
+
+      {!hideAgregarButton && !agregarEnCentro && (
         <button
           type="button"
           onClick={() => {

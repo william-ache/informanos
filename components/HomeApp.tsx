@@ -55,6 +55,10 @@ const FiltroPoblacion = dynamic(() => import("@/components/FiltroPoblacion"), {
   ssr: false,
 });
 
+const FiltroTipoLugar = dynamic(() => import("@/components/FiltroTipoLugar"), {
+  ssr: false,
+});
+
 const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
   ssr: false,
 });
@@ -277,7 +281,6 @@ export default function HomeApp() {
 
   const iniciarDonacion = useCallback(() => {
     setTipoLugarInicial("donacion");
-    setAgregarMenuOpen(true);
     setTab("mapa");
   }, []);
 
@@ -469,26 +472,37 @@ export default function HomeApp() {
       )}
 
       {!isDesktop && (
-        <header className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-3 pt-safe">
-          <div>
-            <p
-              role="presentation"
-              onClick={onSecretAdminTap}
-              className="cursor-default text-[10px] font-bold uppercase tracking-widest text-red-400 select-none"
-            >
-              Emergencia · Aragua
-            </p>
-            <h1 className="text-base font-bold leading-tight">
-              {tabs.find((t) => t.id === tab)?.label ?? "Informa"}
-            </h1>
-          </div>
-          <div className="text-right text-xs text-slate-400">
-            <p>{centros.length} centros</p>
-            {urgentes > 0 && <p className="font-bold text-red-400">{urgentes} urgentes</p>}
-            <div className="mt-1 flex justify-end">
-              <PresenceStats />
+        <header className="shrink-0 border-b border-slate-800 bg-slate-900 px-4 pb-3 pt-safe">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p
+                role="presentation"
+                onClick={onSecretAdminTap}
+                className="cursor-default text-[10px] font-bold uppercase tracking-widest text-red-400 select-none"
+              >
+                Emergencia · Aragua
+              </p>
+              <h1 className="text-base font-bold leading-tight">
+                {tabs.find((t) => t.id === tab)?.label ?? "Informa"}
+              </h1>
+            </div>
+            <div className="text-right text-xs text-slate-400">
+              <p>{centros.length} centros</p>
+              {urgentes > 0 && <p className="font-bold text-red-400">{urgentes} urgentes</p>}
+              <div className="mt-1 flex justify-end">
+                <PresenceStats />
+              </div>
             </div>
           </div>
+          {tab === "mapa" && (
+            <div className="mt-2.5">
+              <FiltroTipoLugar
+                compact
+                value={filtroTipoLugar}
+                onChange={setFiltroTipoLugar}
+              />
+            </div>
+          )}
         </header>
       )}
 
@@ -501,13 +515,6 @@ export default function HomeApp() {
             placeholder="Buscar lugar…"
           />
           <FiltroPoblacion value={filtroPoblacion} onChange={setFiltroPoblacion} />
-          <button
-            type="button"
-            onClick={() => setAgregarMenuOpen(true)}
-            className="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white active:bg-blue-600"
-          >
-            + Agregar lugar de ayuda
-          </button>
         </div>
       )}
 
@@ -530,6 +537,7 @@ export default function HomeApp() {
             tipoLugarInicial={tipoLugarInicial}
             onTipoLugarInicialConsumido={() => setTipoLugarInicial(null)}
             hideAgregarButton={!isDesktop}
+            agregarEnCentro={!isDesktop && tab === "mapa"}
             agregarMenuOpen={agregarMenuOpen}
             onAgregarMenuChange={setAgregarMenuOpen}
             className="h-full"
