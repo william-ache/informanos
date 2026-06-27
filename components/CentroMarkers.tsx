@@ -118,7 +118,7 @@ function CentroMarkerItem({
                 onClick={() => abrirEnGoogleMaps(centro.latitud, centro.longitud)}
                 className="centro-popup-btn rounded-md bg-blue-600 px-2 py-1.5 text-[10px] font-bold text-white"
               >
-                Maps
+                Como llegar
               </button>
               {onReportar && (
                 <button
