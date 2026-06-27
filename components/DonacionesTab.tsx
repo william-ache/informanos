@@ -2,11 +2,9 @@
 
 import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
 import { formatFechaHumana } from "@/lib/formatFecha";
-import {
-  colorTipoLugar,
-  donacionVigente,
-  etiquetaTipoLugar,
-} from "@/lib/tipo-lugar";
+import { donacionVigente } from "@/lib/tipo-lugar";
+import TipoLugarBadge from "@/components/TipoLugarBadge";
+import CentroDescripcion from "@/components/CentroDescripcion";
 import type { CentroAcopio } from "@/types/database";
 
 interface DonacionesTabProps {
@@ -74,13 +72,10 @@ export default function DonacionesTab({
                       <p className="font-bold leading-snug">{centro.nombre}</p>
                       <p className="text-xs text-slate-400">{centro.municipio}</p>
                     </div>
-                    <span
-                      className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                      style={{ backgroundColor: colorTipoLugar("donacion") }}
-                    >
-                      {etiquetaTipoLugar("donacion").split(" ")[2]}
-                    </span>
+                    <TipoLugarBadge tipo="donacion" />
                   </div>
+
+                  <CentroDescripcion centro={centro} />
 
                   {centro.donacion_necesita && (
                     <p className="mt-2 text-sm">

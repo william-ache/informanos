@@ -53,6 +53,7 @@ interface FormState {
   tipoLugar: TipoLugar;
   insumos: InsumoForm[];
   ayuda: AyudaSolicitada;
+  descripcion: string;
 }
 
 type PasoVotacion = "tipo" | "insumos" | null;
@@ -170,6 +171,7 @@ export default function CentroEditarModal({
       tipoLugar: centro.tipo_lugar ?? "acopio",
       insumos,
       ayuda: ayudaDesdeCentro(centro),
+      descripcion: centro.descripcion ?? "",
     });
     setError(null);
     setPasoVotacion(null);
@@ -284,6 +286,7 @@ export default function CentroEditarModal({
           aprox_ancianos: parsePoblacionInput(form.aproxAncianos),
           aprox_animales: parsePoblacionInput(form.aproxAnimales),
           ...form.ayuda,
+          descripcion: form.descripcion.trim() || null,
         }),
       });
 
@@ -442,6 +445,29 @@ export default function CentroEditarModal({
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 lg:hidden" />
             <h2 className="text-lg font-bold">Editar lugar</h2>
             <p className="mt-1 text-sm text-slate-500">{centro.nombre}</p>
+
+            <div className="mt-3">
+              <label className="text-sm font-medium" htmlFor="descripcionZona">
+                Descripción de la zona
+              </label>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Qué pasa aquí, acceso, horarios, riesgos, etc.
+              </p>
+              <textarea
+                id="descripcionZona"
+                rows={3}
+                maxLength={1000}
+                value={form.descripcion}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    prev ? { ...prev, descripcion: e.target.value } : prev,
+                  )
+                }
+                placeholder="Ej: Acopio en plaza, entrar por calle principal…"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600"
+              />
+            </div>
+
             <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900">
               Personas y teléfonos se guardan al instante. Tipo e insumos van a
               votación ({MINUTOS_PROPUESTA} min, mín. {MIN_VOTOS_PROPUESTA} votos).
@@ -686,7 +712,7 @@ export default function CentroEditarModal({
                 {MIN_VOTOS_PROPUESTA} votos).
               </p>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                {TIPO_LUGAR_OPCIONES.map(({ value, label, color }) => (
+                {TIPO_LUGAR_OPCIONES.map(({ value, label, color, short }) => (
                   <label
                     key={value}
                     className={`flex cursor-pointer items-start gap-2 rounded-xl border p-2 text-[11px] leading-snug ${
@@ -709,7 +735,15 @@ export default function CentroEditarModal({
                       }
                       className="mt-0.5"
                     />
-                    {label}
+                    <span>
+                      <span
+                        className="mr-1 inline-block rounded px-1 py-0.5 text-[9px] font-bold text-white"
+                        style={{ backgroundColor: color }}
+                      >
+                        {short}
+                      </span>
+                      {label}
+                    </span>
                   </label>
                 ))}
               </div>

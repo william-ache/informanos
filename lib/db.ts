@@ -207,6 +207,15 @@ export async function ensureSchema(): Promise<void> {
         }
       }
 
+      try {
+        await pool.query(
+          `ALTER TABLE centros_acopio ADD COLUMN descripcion TEXT NULL AFTER direccion`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("Duplicate column")) throw error;
+      }
+
       const ayudaAlters = [
         `ALTER TABLE centros_acopio ADD COLUMN solicita_transporte TINYINT(1) NOT NULL DEFAULT 0 AFTER finalizado_en`,
         `ALTER TABLE centros_acopio ADD COLUMN solicita_medico TINYINT(1) NOT NULL DEFAULT 0 AFTER solicita_transporte`,

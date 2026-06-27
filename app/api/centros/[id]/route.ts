@@ -100,9 +100,17 @@ export async function PATCH(request: Request, { params }: Params) {
           : centroAntes.aprox_animales,
     };
 
+    const descripcion =
+      "descripcion" in body
+        ? typeof body.descripcion === "string"
+          ? body.descripcion.trim().slice(0, 1000) || null
+          : null
+        : centroAntes.descripcion;
+
     await pool.execute(
       `UPDATE centros_acopio
        SET contacto = ?,
+           descripcion = ?,
            aprox_ninos = ?,
            aprox_personas = ?,
            aprox_ancianos = ?,
@@ -115,6 +123,7 @@ export async function PATCH(request: Request, { params }: Params) {
        WHERE id = ?`,
       [
         contacto,
+        descripcion,
         poblacion.aprox_ninos,
         poblacion.aprox_personas,
         poblacion.aprox_ancianos,
@@ -131,6 +140,9 @@ export async function PATCH(request: Request, { params }: Params) {
     const lineas: string[] = [];
     if (contacto !== centroAntes.contacto) {
       lineas.push(contacto ? `Tel: ${contacto}` : "Teléfonos quitados");
+    }
+    if (descripcion !== centroAntes.descripcion) {
+      lineas.push(descripcion ? `Descripción: ${descripcion}` : "Descripción quitada");
     }
     lineas.push(...cambiosPoblacionTexto(centroAntes, poblacion));
     lineas.push(...cambiosAyudaTexto(ayudaAntes, ayudaNueva));

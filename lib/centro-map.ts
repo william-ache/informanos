@@ -14,6 +14,7 @@ export interface CentroRow extends RowDataPacket {
   nombre: string;
   municipio: string;
   direccion: string | null;
+  descripcion: string | null;
   latitud: string | number;
   longitud: string | number;
   contacto: string | null;
@@ -36,7 +37,7 @@ export interface CentroRow extends RowDataPacket {
   creado_en: string;
 }
 
-export const CENTRO_SELECT = `id, nombre, municipio, direccion, latitud, longitud, contacto,
+export const CENTRO_SELECT = `id, nombre, municipio, direccion, descripcion, latitud, longitud, contacto,
   aprox_ninos, aprox_personas, aprox_ancianos, aprox_animales,
   tipo_lugar, donacion_limite, donacion_necesita, donacion_destino, donacion_transporte,
   estado_operativo, finalizado_en,
@@ -56,6 +57,7 @@ export function mapCentro(
     nombre: row.nombre,
     municipio: row.municipio,
     direccion: row.direccion,
+    descripcion: row.descripcion,
     latitud: Number(row.latitud),
     longitud: Number(row.longitud),
     contacto: row.contacto,

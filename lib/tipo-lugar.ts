@@ -15,8 +15,8 @@ export const TIPO_LUGAR_OPCIONES: {
 }[] = [
   {
     value: "acopio",
-    label: "Centro de ayuda / acopio",
-    short: "Acopio",
+    label: "Zona de ayuda / acopio",
+    short: "Zona de ayuda",
     color: "#2563eb",
   },
   {
@@ -50,6 +50,10 @@ export function etiquetaTipoLugar(tipo: TipoLugar): string {
   return TIPO_LUGAR_OPCIONES.find((o) => o.value === tipo)?.label ?? tipo;
 }
 
+export function badgeTipoLugar(tipo: TipoLugar): string {
+  return TIPO_LUGAR_OPCIONES.find((o) => o.value === tipo)?.short ?? tipo;
+}
+
 export function colorTipoLugar(tipo: TipoLugar): string {
   return TIPO_LUGAR_OPCIONES.find((o) => o.value === tipo)?.color ?? "#2563eb";
 }
@@ -80,7 +84,7 @@ export function mensajeChatNuevoLugar(
     case "peligro":
       return `⚠️ Zona de peligro: ${nombre} · ${municipio}`;
     default:
-      return `📍 Nuevo lugar: ${nombre} · ${municipio}`;
+      return `📍 Zona de ayuda: ${nombre} · ${municipio}`;
   }
 }
 

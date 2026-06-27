@@ -60,6 +60,7 @@ export interface CentroAcopio {
   nombre: string;
   municipio: string;
   direccion: string | null;
+  descripcion: string | null;
   latitud: number;
   longitud: number;
   contacto: string | null;

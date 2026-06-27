@@ -9,7 +9,8 @@ import {
 import type { FiltroPoblacion as FiltroPoblacionState } from "@/lib/poblacion";
 import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
 import type { FiltroTipoLugar } from "@/lib/tipo-lugar";
-import { colorTipoLugar, etiquetaTipoLugar, tipoLugarEfectivo } from "@/lib/tipo-lugar";
+import TipoLugarBadge from "@/components/TipoLugarBadge";
+import CentroDescripcion from "@/components/CentroDescripcion";
 
 const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
   ssr: false,
@@ -175,16 +176,10 @@ export default function CentrosList({
                     <span className="mt-1.5 h-3 w-3 shrink-0 animate-pulse rounded-full bg-red-500" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <span
-                      className="mb-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
-                      style={{
-                        backgroundColor: colorTipoLugar(tipoLugarEfectivo(centro)),
-                      }}
-                    >
-                      {etiquetaTipoLugar(tipoLugarEfectivo(centro)).split(" ")[0]}
-                    </span>
+                    <TipoLugarBadge centro={centro} compact />
                     <p className="font-semibold leading-snug">{centro.nombre}</p>
                     <p className="text-sm text-slate-400">{centro.municipio}</p>
+                    <CentroDescripcion centro={centro} />
                     {esHistorial && centro.finalizado_en && (
                       <p className="mt-1 text-xs text-slate-500">
                         Finalizado · historial ⏱{" "}

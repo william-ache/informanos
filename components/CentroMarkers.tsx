@@ -7,12 +7,10 @@ import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
 import { iconoCentro } from "@/lib/leaflet-icons";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import { resumenPoblacion, tienePoblacion } from "@/lib/poblacion";
-import {
-  colorTipoLugar,
-  etiquetaTipoLugar,
-  tipoLugarEfectivo,
-} from "@/lib/tipo-lugar";
+import { tipoLugarEfectivo } from "@/lib/tipo-lugar";
 import type { CentroAcopio } from "@/types/database";
+import TipoLugarBadge from "@/components/TipoLugarBadge";
+import CentroDescripcion from "@/components/CentroDescripcion";
 import CentroVotoTipo from "@/components/CentroVotoTipo";
 import CentroEditarModal from "@/components/CentroEditarModal";
 import CentroVotoOperativo from "@/components/CentroVotoOperativo";
@@ -92,18 +90,12 @@ function CentroMarkerItem({
             >
               Editar
             </button>
-            <span
-              className="mb-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
-              style={{
-                backgroundColor: colorTipoLugar(tipoLugarEfectivo(centro)),
-              }}
-            >
-              {etiquetaTipoLugar(tipoLugarEfectivo(centro)).split(" ")[0]}
-            </span>
+            <TipoLugarBadge centro={centro} compact />
             <p className="line-clamp-2 text-[13px] font-bold leading-snug">
               {centro.nombre}
             </p>
             <p className="text-[11px] text-slate-500">{centro.municipio}</p>
+            <CentroDescripcion centro={centro} compact />
           </div>
 
           {tienePoblacion(centro) && (
