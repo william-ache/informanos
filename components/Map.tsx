@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   MapContainer,
   Marker,
-  Popup,
   TileLayer,
+  useMap,
   useMapEvents,
 } from "react-leaflet";
+import CentroMarkers from "@/components/CentroMarkers";
+import AraguaBoundary from "@/components/AraguaBoundary";
 import type { CentroAcopio, NuevoCentroAcopio } from "@/types/database";
-import { formatFechaHumana } from "@/lib/formatFecha";
+import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import { configureLeafletIcons } from "@/lib/leaflet-icons";
 import "leaflet/dist/leaflet.css";
 
@@ -27,34 +29,43 @@ interface MapProps {
   centros: CentroAcopio[];
   onRegistrarCentro?: (centro: NuevoCentroAcopio) => void | Promise<void>;
   className?: string;
+  active?: boolean;
 }
 
-interface MapClickHandlerProps {
+function MapClickHandler({
+  active,
+  onMapClick,
+}: {
   active: boolean;
   onMapClick: (lat: number, lng: number) => void;
-}
-
-function MapClickHandler({ active, onMapClick }: MapClickHandlerProps) {
+}) {
   useMapEvents({
     click(event) {
-      if (active) {
-        onMapClick(event.latlng.lat, event.latlng.lng);
-      }
+      if (active) onMapClick(event.latlng.lat, event.latlng.lng);
     },
   });
   return null;
 }
 
-function urgenciaClass(urgencia: string) {
-  if (urgencia === "alta") return "font-bold text-red-600";
-  if (urgencia === "media") return "text-amber-600";
-  return "text-emerald-600";
+function MapResize({ active }: { active: boolean }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!active) return;
+    const id = window.requestAnimationFrame(() => {
+      map.invalidateSize({ animate: false });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [active, map]);
+
+  return null;
 }
 
-export default function Map({
+function MapView({
   centros,
   onRegistrarCentro,
   className = "",
+  active = true,
 }: MapProps) {
   const [registrarActivo, setRegistrarActivo] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -63,12 +74,25 @@ export default function Map({
   );
   const [form, setForm] = useState(emptyForm);
   const [enviando, setEnviando] = useState(false);
+  const [alertaZona, setAlertaZona] = useState<string | null>(null);
 
   useEffect(() => {
     configureLeafletIcons();
   }, []);
 
+  useEffect(() => {
+    if (!alertaZona) return;
+    const id = window.setTimeout(() => setAlertaZona(null), 5000);
+    return () => window.clearTimeout(id);
+  }, [alertaZona]);
+
   function handleMapClick(lat: number, lng: number) {
+    if (!puntoEnAragua(lat, lng)) {
+      setAlertaZona(MENSAJE_FUERA_ARAGUA);
+      return;
+    }
+
+    setAlertaZona(null);
     setCoords({ lat, lng });
     setForm(emptyForm);
     setModalAbierto(true);
@@ -83,6 +107,12 @@ export default function Map({
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!coords || !onRegistrarCentro) return;
+
+    if (!puntoEnAragua(coords.lat, coords.lng)) {
+      setAlertaZona(MENSAJE_FUERA_ARAGUA);
+      cerrarModal();
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -105,55 +135,37 @@ export default function Map({
       <MapContainer
         center={ARAGUA_CENTER}
         zoom={INITIAL_ZOOM}
-        className={`h-full w-full ${registrarActivo ? "[&]:cursor-crosshair" : ""}`}
-        style={{ minHeight: 0 }}
+        preferCanvas
+        className="h-full w-full"
+        style={{ minHeight: 0, cursor: registrarActivo ? "crosshair" : "grab" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+          attribution='&copy; OSM'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          updateWhenIdle
+          updateWhenZooming={false}
+          keepBuffer={4}
         />
 
+        <MapResize active={active} />
+        <AraguaBoundary />
         <MapClickHandler active={registrarActivo} onMapClick={handleMapClick} />
-
-        {centros.map((centro) => (
-          <Marker key={centro.id} position={[centro.latitud, centro.longitud]}>
-            <Popup>
-              <div className="min-w-[200px] max-w-[260px] text-slate-900">
-                <p className="font-bold leading-tight">{centro.nombre}</p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {centro.municipio}
-                  {centro.contacto ? ` · ${centro.contacto}` : ""}
-                </p>
-
-                {centro.necesidades && centro.necesidades.length > 0 ? (
-                  <ul className="mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs">
-                    {centro.necesidades.map((nec) => (
-                      <li key={nec.id}>
-                        <span className={urgenciaClass(nec.urgencia)}>
-                          {nec.urgencia.toUpperCase()}
-                        </span>
-                        {" · "}
-                        {nec.elemento} ({nec.cantidad_solicitada})
-                        <span className="mt-0.5 block text-slate-500">
-                          {formatFechaHumana(nec.actualizado_en)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-500">
-                    Sin necesidades registradas.
-                  </p>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        <CentroMarkers centros={centros} />
 
         {coords && modalAbierto && (
           <Marker position={[coords.lat, coords.lng]} />
         )}
       </MapContainer>
+
+      <div className="pointer-events-none absolute left-3 top-14 z-[1000] rounded-lg border border-red-500/50 bg-red-950/85 px-3 py-1.5 text-xs font-semibold text-red-200 shadow lg:top-16">
+        Zona activa: Estado Aragua
+      </div>
+
+      {alertaZona && (
+        <div className="absolute left-3 right-3 top-[4.5rem] z-[1001] rounded-xl border border-amber-500 bg-amber-950/95 px-4 py-3 text-sm font-medium text-amber-100 shadow-lg lg:top-[4.75rem] lg:max-w-md">
+          {alertaZona}
+        </div>
+      )}
 
       <button
         type="button"
@@ -170,7 +182,7 @@ export default function Map({
 
       {registrarActivo && !modalAbierto && (
         <div className="pointer-events-none absolute bottom-4 left-3 right-3 z-[1000] mx-auto max-w-sm rounded-xl bg-black/80 px-4 py-2.5 text-center text-sm text-white lg:bottom-6">
-          Toca el mapa para ubicar el centro
+          Toca el mapa dentro de la zona roja (Estado Aragua)
         </div>
       )}
 
@@ -185,7 +197,6 @@ export default function Map({
             className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 text-slate-900 shadow-2xl lg:max-w-md lg:rounded-2xl"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 lg:hidden" />
-
             <h2 className="text-lg font-bold">Nuevo centro de acopio</h2>
             <p className="mt-1 text-sm text-slate-500">
               {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
@@ -235,3 +246,5 @@ export default function Map({
     </div>
   );
 }
+
+export default memo(MapView);

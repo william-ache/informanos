@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2";
 import { NextResponse } from "next/server";
+import { MENSAJE_FUERA_ARAGUA, puntoEnAragua } from "@/lib/aragua-boundary";
 import pool from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
 import type { CentroAcopio, Necesidad, NuevoCentroAcopio } from "@/types/database";
@@ -107,6 +108,10 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       );
+    }
+
+    if (!puntoEnAragua(latitud, longitud)) {
+      return NextResponse.json({ error: MENSAJE_FUERA_ARAGUA }, { status: 400 });
     }
 
     const centro: NuevoCentroAcopio = {

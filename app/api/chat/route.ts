@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2";
 import { NextResponse } from "next/server";
-import pool from "@/lib/db";
+import pool, { ensureSchema } from "@/lib/db";
 import { handleDbError, parseJsonBody, requireDb, toNumber } from "@/lib/api";
 import type { ChatMensaje } from "@/types/database";
 
@@ -32,6 +32,8 @@ export async function GET() {
   if (configError) return configError;
 
   try {
+    await ensureSchema();
+
     const [rows] = await pool.query<ChatRow[]>(
       `SELECT id, centro_id, autor, mensaje, latitud, longitud, creado_en
        FROM (
@@ -54,6 +56,8 @@ export async function POST(request: Request) {
   if (configError) return configError;
 
   try {
+    await ensureSchema();
+
     const body = parseJsonBody<Record<string, unknown>>(await request.json());
     if (!body) {
       return NextResponse.json({ error: "Cuerpo JSON inválido." }, { status: 400 });

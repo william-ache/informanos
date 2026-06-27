@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
+import { swrDefaults } from "@/lib/swr-config";
+import { usePageVisible } from "@/hooks/use-page-visible";
 import { formatFechaHumana } from "@/lib/formatFecha";
 import type { ChatMensaje } from "@/types/database";
 
@@ -14,19 +16,27 @@ const CHAT_KEY = "/api/chat";
 
 interface StreamingChatProps {
   fullHeight?: boolean;
+  hideHeader?: boolean;
 }
 
-export default function StreamingChat({ fullHeight = false }: StreamingChatProps) {
+export default function StreamingChat({
+  fullHeight = false,
+  hideHeader = false,
+}: StreamingChatProps) {
   const [autor, setAutor] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listaRef = useRef<HTMLDivElement>(null);
+  const pageVisible = usePageVisible();
 
   const { data, error: swrError, isLoading } = useSWR<ChatResponse>(
     CHAT_KEY,
     fetcher,
-    { refreshInterval: 2000 },
+    {
+      ...swrDefaults,
+      refreshInterval: pageVisible ? 2000 : 0,
+    },
   );
 
   const mensajes = data?.mensajes ?? [];
@@ -92,7 +102,7 @@ export default function StreamingChat({ fullHeight = false }: StreamingChatProps
         fullHeight ? "h-full" : "min-h-48 border-t border-slate-800"
       }`}
     >
-      {!fullHeight && (
+      {!fullHeight && !hideHeader && (
         <header className="border-b border-slate-800 px-4 py-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">
             Chat en vivo

@@ -53,6 +53,26 @@ CREATE INDEX idx_necesidades_urgencia ON necesidades (urgencia);
 CREATE INDEX idx_chat_centro_id ON chat_mensajes (centro_id);
 CREATE INDEX idx_chat_creado_en ON chat_mensajes (creado_en);
 
+CREATE TABLE IF NOT EXISTS presencia_sesiones (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  ip_hash VARCHAR(64) NOT NULL,
+  ultimo_ping DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_presencia_ping (ultimo_ping)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS visitas_ip (
+  ip_hash VARCHAR(64) NOT NULL PRIMARY KEY,
+  visitas INT NOT NULL DEFAULT 1,
+  primera_visita DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ultima_visita DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Usuario de aplicación (ajusta la contraseña en producción)
+CREATE USER IF NOT EXISTS 'informa'@'localhost' IDENTIFIED BY 'informa_aragua_secure';
+GRANT ALL PRIVILEGES ON informa_aragua.* TO 'informa'@'localhost';
+FLUSH PRIVILEGES;
+
 -- ---------------------------------------------------------------------------
 -- Datos de prueba
 -- ---------------------------------------------------------------------------

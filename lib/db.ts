@@ -20,6 +20,51 @@ const pool = mysql.createPool({
 
 export default pool;
 
+let schemaReady: Promise<void> | null = null;
+
+export async function ensureSchema(): Promise<void> {
+  if (!dbConfigurado) return;
+
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      const alters = [
+        `ALTER TABLE chat_mensajes ADD COLUMN latitud DECIMAL(10, 8) NULL AFTER mensaje`,
+        `ALTER TABLE chat_mensajes ADD COLUMN longitud DECIMAL(10, 8) NULL AFTER latitud`,
+      ];
+
+      for (const sql of alters) {
+        try {
+          await pool.query(sql);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (!message.includes("Duplicate column")) throw error;
+        }
+      }
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS presencia_sesiones (
+          id VARCHAR(36) NOT NULL PRIMARY KEY,
+          ip_hash VARCHAR(64) NOT NULL,
+          ultimo_ping DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_presencia_ping (ultimo_ping)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS visitas_ip (
+          ip_hash VARCHAR(64) NOT NULL PRIMARY KEY,
+          visitas INT NOT NULL DEFAULT 1,
+          primera_visita DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          ultima_visita DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+    })();
+  }
+
+  await schemaReady;
+}
+
 export async function pingDb(): Promise<boolean> {
   if (!dbConfigurado) return false;
 
