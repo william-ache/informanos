@@ -31,6 +31,10 @@ const CentroBuscador = dynamic(() => import("@/components/CentroBuscador"), {
   ssr: false,
 });
 
+const SearchableSelect = dynamic(() => import("@/components/SearchableSelect"), {
+  ssr: false,
+});
+
 const PresenceStats = dynamic(() => import("@/components/PresenceStats"), {
   ssr: false,
 });
@@ -289,21 +293,20 @@ export default function HomeApp() {
           Indica qué insumos faltan en un centro de acopio.
         </p>
 
-        <select
+        <SearchableSelect
           required
           value={necesidadForm.centro_id}
-          onChange={(e) =>
-            setNecesidadForm((prev) => ({ ...prev, centro_id: e.target.value }))
+          onChange={(centro_id) =>
+            setNecesidadForm((prev) => ({ ...prev, centro_id }))
           }
-          className={`${inputClass} mb-3`}
-        >
-          <option value="">Seleccionar centro</option>
-          {centros.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
+          placeholder="Buscar centro…"
+          className="mb-3"
+          options={centros.map((c) => ({
+            value: c.id,
+            label: c.nombre,
+            sublabel: c.municipio,
+          }))}
+        />
 
         <input
           required
@@ -330,20 +333,23 @@ export default function HomeApp() {
           className={`${inputClass} mb-3`}
         />
 
-        <select
+        <SearchableSelect
           value={necesidadForm.urgencia}
-          onChange={(e) =>
+          onChange={(urgencia) =>
             setNecesidadForm((prev) => ({
               ...prev,
-              urgencia: e.target.value as UrgenciaNivel,
+              urgencia: urgencia as UrgenciaNivel,
             }))
           }
-          className={`${inputClass} mb-4`}
-        >
-          <option value="alta">Alta</option>
-          <option value="media">Media</option>
-          <option value="baja">Baja</option>
-        </select>
+          placeholder="Buscar urgencia…"
+          className="mb-4"
+          maxResults={3}
+          options={[
+            { value: "alta", label: "Alta", sublabel: "Prioridad máxima" },
+            { value: "media", label: "Media", sublabel: "Prioridad moderada" },
+            { value: "baja", label: "Baja", sublabel: "Prioridad baja" },
+          ]}
+        />
 
         <button
           type="submit"

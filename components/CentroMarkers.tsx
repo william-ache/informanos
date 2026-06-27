@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Marker, Popup } from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
 import { formatFechaHumana } from "@/lib/formatFecha";
@@ -23,15 +23,25 @@ interface CentroMarkersProps {
 function CentroMarkerItem({
   centro,
   activo,
+  abrirPopup,
   onReportar,
   onVerLista,
 }: {
   centro: CentroAcopio;
   activo: boolean;
+  abrirPopup?: boolean;
   onReportar?: (centro: CentroAcopio) => void;
   onVerLista?: (centro: CentroAcopio) => void;
 }) {
   const markerRef = useRef<LeafletMarker>(null);
+
+  useEffect(() => {
+    if (!abrirPopup) return;
+    const id = window.setTimeout(() => {
+      markerRef.current?.openPopup();
+    }, 750);
+    return () => window.clearTimeout(id);
+  }, [abrirPopup]);
 
   return (
     <Marker
@@ -135,6 +145,7 @@ function CentroMarkersInner({
           key={centro.id}
           centro={centro}
           activo={!centroActivoId || centro.id === centroActivoId}
+          abrirPopup={centroActivoId === centro.id}
           onReportar={onReportar}
           onVerLista={onVerLista}
         />
