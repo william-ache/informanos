@@ -67,7 +67,7 @@ function CentroMarkerItem({
         offset={[0, -6]}
         autoPan={false}
         closeOnClick={false}
-        autoClose={false}
+        autoClose
         className="centro-popup"
       >
         <div className="centro-popup-inner w-[min(240px,calc(100vw-3.5rem))] text-slate-900">
