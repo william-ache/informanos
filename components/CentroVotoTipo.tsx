@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { mutate } from "swr";
+import ModalPortal from "@/components/ModalPortal";
 import { calcularDistanciaMetros } from "@/lib/geo";
 import { datosExtendidosPermitidos } from "@/lib/privacidad";
 import {
@@ -105,6 +106,7 @@ interface CentroVotoTipoProps {
 export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTipoProps) {
   const [procesando, setProcesando] = useState(false);
   const [segundos, setSegundos] = useState(0);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const propuesta = propuestaActiva(centro.propuesta_tipo)
     ? centro.propuesta_tipo!
     : null;
@@ -133,6 +135,7 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
     if (!continuar) return;
 
     setProcesando(true);
+    setModalAbierto(false);
     try {
       const res = await fetch("/api/centros/propuesta-tipo", {
         method: "POST",
@@ -204,6 +207,57 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
     ? "centro-popup-btn rounded-md px-2 py-1.5 text-[10px] font-bold disabled:opacity-50"
     : "rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50";
 
+  const modalOpciones = (
+    <ModalPortal open={modalAbierto}>
+      <div
+        className="fixed inset-0 z-[10000] flex items-end bg-black/60 sm:items-center sm:justify-center sm:p-4"
+        onClick={() => setModalAbierto(false)}
+      >
+        <div
+          className="w-full max-w-sm rounded-t-2xl bg-white p-5 pb-safe text-slate-900 shadow-2xl sm:rounded-2xl sm:pb-5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
+          <h3 className="text-base font-bold">Marcar lugar como…</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            {centro.nombre} · votación 3 min, gana mayoría
+          </p>
+          <div className="mt-4 space-y-2">
+            {TIPOS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                disabled={procesando || centro.tipo_lugar === value}
+                onClick={() => void proponer(value)}
+                className="w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-white disabled:opacity-40"
+                style={{
+                  backgroundColor:
+                    centro.tipo_lugar === value
+                      ? "#94a3b8"
+                      : colorTipoLugar(value),
+                }}
+              >
+                {label}
+                {centro.tipo_lugar === value && (
+                  <span className="ml-2 text-xs font-normal opacity-90">
+                    (tipo actual)
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setModalAbierto(false)}
+            className="mt-4 w-full rounded-xl border border-slate-300 py-3 text-sm font-semibold text-slate-700"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+
   if (propuesta && segundos > 0) {
     return (
       <div
@@ -241,30 +295,20 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
   }
 
   return (
-    <div className={compact ? "text-[10px]" : "text-xs"}>
-      <p className={`font-semibold ${compact ? "text-slate-700" : "text-slate-300"}`}>
-        Marcar como…
-      </p>
-      <div className="mt-1.5 flex flex-wrap gap-1">
-        {TIPOS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            disabled={procesando || centro.tipo_lugar === value}
-            onClick={() => proponer(value)}
-            className={`${btnClass} text-white`}
-            style={{
-              backgroundColor:
-                centro.tipo_lugar === value
-                  ? "#94a3b8"
-                  : colorTipoLugar(value),
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-1 text-slate-500">Votación 3 min · gana mayoría</p>
-    </div>
+    <>
+      <button
+        type="button"
+        disabled={procesando}
+        onClick={() => setModalAbierto(true)}
+        className={
+          compact
+            ? "centro-popup-btn w-full rounded-md border border-violet-300 bg-violet-50 px-2.5 py-2 text-[10px] font-bold text-violet-900"
+            : "w-full rounded-lg border border-violet-800/50 bg-violet-950/30 px-3 py-2 text-xs font-semibold text-violet-200"
+        }
+      >
+        Marcar lugar como…
+      </button>
+      {modalOpciones}
+    </>
   );
 }

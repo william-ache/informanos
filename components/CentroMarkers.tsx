@@ -180,15 +180,6 @@ function CentroMarkerItem({
                 </button>
               )}
             </div>
-            {onReportarLugar && (
-              <button
-                type="button"
-                onClick={() => onReportarLugar(centro)}
-                className="centro-popup-btn w-full rounded-md border border-amber-400 bg-amber-50 px-2.5 py-2 text-[10px] font-bold text-amber-900"
-              >
-                Reportar
-              </button>
-            )}
             {onVerLista && (
               <button
                 type="button"
