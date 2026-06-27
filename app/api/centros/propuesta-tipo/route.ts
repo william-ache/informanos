@@ -5,11 +5,12 @@ import { handleDbError, parseJsonBody, requireDb } from "@/lib/api";
 import { publicarEnChat } from "@/lib/chat-actividad";
 import pool, { ensureSchema } from "@/lib/db";
 import {
+  intervaloPropuestaSql,
   mapPropuesta,
   resolverPropuestasExpiradas,
   type PropuestaRow,
 } from "@/lib/propuesta-tipo-server";
-import { parseTipoVotable } from "@/lib/propuesta-tipo";
+import { parseTipoVotable, textoReglasVotacion } from "@/lib/propuesta-tipo";
 import { hashIp, obtenerIp } from "@/lib/presence";
 import { etiquetaTipoLugar } from "@/lib/tipo-lugar";
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     if (!centroId || !tipoPropuesto) {
       return NextResponse.json(
-        { error: "Indica centro_id y tipo: donacion, urgencia o peligro." },
+        { error: "Indica centro_id y un tipo de lugar válido." },
         { status: 400 },
       );
     }
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
       await connection.execute(
         `INSERT INTO propuestas_tipo_lugar
           (id, centro_id, tipo_propuesto, expira_en)
-         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 3 MINUTE))`,
+         VALUES (?, ?, ?, ${intervaloPropuestaSql()})`,
         [propuestaId, centroId, tipoPropuesto],
       );
 
@@ -106,7 +107,8 @@ export async function POST(request: Request) {
     const [rows] = await pool.query<PropuestaRow[]>(
       `SELECT p.id, p.centro_id, p.tipo_propuesto, p.estado, p.expira_en, p.creado_en,
               COALESCE(SUM(CASE WHEN v.voto = 'si' THEN v.peso ELSE 0 END), 0) AS votos_si,
-              COALESCE(SUM(CASE WHEN v.voto = 'no' THEN v.peso ELSE 0 END), 0) AS votos_no
+              COALESCE(SUM(CASE WHEN v.voto = 'no' THEN v.peso ELSE 0 END), 0) AS votos_no,
+              COUNT(DISTINCT v.ip_hash) AS votantes
        FROM propuestas_tipo_lugar p
        LEFT JOIN votos_propuesta_tipo v ON v.propuesta_id = p.id
        WHERE p.id = ?
@@ -123,7 +125,7 @@ export async function POST(request: Request) {
     }
 
     await publicarEnChat(
-      `🗳️ Votación 3 min: ¿«${centro.nombre}» es ${etiquetaTipoLugar(tipoPropuesto).toLowerCase()}?`,
+      `🗳️ Votación (${textoReglasVotacion()}): ¿«${centro.nombre}» es ${etiquetaTipoLugar(tipoPropuesto).toLowerCase()}?`,
       centroId,
     );
 

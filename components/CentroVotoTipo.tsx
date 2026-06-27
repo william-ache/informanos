@@ -7,14 +7,16 @@ import { calcularDistanciaMetros } from "@/lib/geo";
 import { datosExtendidosPermitidos } from "@/lib/privacidad";
 import {
   formatoCuentaRegresiva,
+  MIN_VOTOS_PROPUESTA,
   propuestaActiva,
   segundosRestantes,
+  textoReglasVotacion,
 } from "@/lib/propuesta-tipo";
-import { colorTipoLugar, etiquetaTipoLugar } from "@/lib/tipo-lugar";
+import { colorTipoLugar, etiquetaTipoLugar, TIPO_LUGAR_OPCIONES } from "@/lib/tipo-lugar";
 import type {
   CentroAcopio,
   PropuestaTipoLugar,
-  TipoLugarVotable,
+  TipoLugar,
 } from "@/types/database";
 
 const GEOCERCA_METROS = 500;
@@ -24,11 +26,7 @@ interface CentrosResponse {
   centros: CentroAcopio[];
 }
 
-const TIPOS: { value: TipoLugarVotable; label: string }[] = [
-  { value: "donacion", label: "Donación" },
-  { value: "urgencia", label: "Urgencia" },
-  { value: "peligro", label: "Peligro" },
-];
+const TIPOS = TIPO_LUGAR_OPCIONES.map(({ value, label }) => ({ value, label }));
 
 function obtenerUbicacion(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
@@ -128,7 +126,7 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
     void mutate(CENTROS_KEY);
   }, [propuesta, segundos]);
 
-  async function proponer(tipo: TipoLugarVotable) {
+  async function proponer(tipo: TipoLugar) {
     if (procesando || centro.tipo_lugar === tipo) return;
 
     const { continuar, esTestigo } = await resolverVoto(centro);
@@ -220,7 +218,7 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
           <h3 className="text-base font-bold">Marcar lugar como…</h3>
           <p className="mt-1 text-sm text-slate-500">
-            {centro.nombre} · votación 3 min, gana mayoría
+            {centro.nombre} · {textoReglasVotacion()}
           </p>
           <div className="mt-4 space-y-2">
             {TIPOS.map(({ value, label }) => (
@@ -270,7 +268,8 @@ export default function CentroVotoTipo({ centro, compact = false }: CentroVotoTi
           ⏱ {formatoCuentaRegresiva(segundos)}
         </p>
         <p className="mt-0.5 text-violet-800">
-          Sí {propuesta.votos_si} · No {propuesta.votos_no}
+          Sí {propuesta.votos_si} · No {propuesta.votos_no} · {propuesta.votantes}/
+          {MIN_VOTOS_PROPUESTA} votantes
         </p>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           <button

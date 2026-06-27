@@ -146,6 +146,15 @@ export async function ensureSchema(): Promise<void> {
         // ignorar
       }
 
+      try {
+        await pool.query(`
+          ALTER TABLE propuestas_tipo_lugar
+          MODIFY COLUMN tipo_propuesto ENUM('acopio', 'urgencia', 'donacion', 'peligro') NOT NULL
+        `);
+      } catch {
+        // ignorar si ya aplicado
+      }
+
       await pool.query(`
         CREATE TABLE IF NOT EXISTS presencia_sesiones (
           id VARCHAR(36) NOT NULL PRIMARY KEY,

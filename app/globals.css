@@ -73,6 +73,13 @@ textarea {
     sans-serif;
   color: #64748b;
   text-align: center;
+  z-index: 2;
+}
+
+.centro-popup-inner .centro-popup-edit-btn {
+  pointer-events: auto;
+  right: 28px;
+  top: 0;
 }
 
 .leaflet-popup.centro-popup .leaflet-popup-close-button:hover {

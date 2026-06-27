@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Marker, Popup } from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
 import { abrirEnGoogleMaps } from "@/lib/google-maps-url";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/tipo-lugar";
 import type { CentroAcopio } from "@/types/database";
 import CentroVotoTipo from "@/components/CentroVotoTipo";
+import CentroEditarModal from "@/components/CentroEditarModal";
 
 function urgenciaClass(urgencia: string) {
   if (urgencia === "alta") return "font-semibold text-red-600";
@@ -26,6 +27,7 @@ interface CentroMarkersProps {
   onReportar?: (centro: CentroAcopio) => void;
   onReportarLugar?: (centro: CentroAcopio) => void;
   onVerLista?: (centro: CentroAcopio) => void;
+  onEditarModalChange?: (open: boolean) => void;
 }
 
 function CentroMarkerItem({
@@ -35,6 +37,7 @@ function CentroMarkerItem({
   onReportar,
   onReportarLugar,
   onVerLista,
+  onEditarModalChange,
 }: {
   centro: CentroAcopio;
   activo: boolean;
@@ -42,8 +45,14 @@ function CentroMarkerItem({
   onReportar?: (centro: CentroAcopio) => void;
   onReportarLugar?: (centro: CentroAcopio) => void;
   onVerLista?: (centro: CentroAcopio) => void;
+  onEditarModalChange?: (open: boolean) => void;
 }) {
   const markerRef = useRef<LeafletMarker>(null);
+  const [editarOpen, setEditarOpen] = useState(false);
+
+  useEffect(() => {
+    onEditarModalChange?.(editarOpen);
+  }, [editarOpen, onEditarModalChange]);
 
   useEffect(() => {
     if (!abrirPopup) return;
@@ -72,7 +81,14 @@ function CentroMarkerItem({
         className="centro-popup"
       >
         <div className="centro-popup-inner w-[min(240px,calc(100vw-3.5rem))] text-slate-900">
-          <div className="pr-7">
+          <div className="relative pr-16">
+            <button
+              type="button"
+              onClick={() => setEditarOpen(true)}
+              className="centro-popup-edit-btn absolute right-0 top-0 rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-700"
+            >
+              Editar
+            </button>
             <span
               className="mb-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
               style={{
@@ -192,6 +208,11 @@ function CentroMarkerItem({
           </div>
         </div>
       </Popup>
+      <CentroEditarModal
+        open={editarOpen}
+        centro={centro}
+        onClose={() => setEditarOpen(false)}
+      />
     </Marker>
   );
 }
@@ -202,6 +223,7 @@ function CentroMarkersInner({
   onReportar,
   onReportarLugar,
   onVerLista,
+  onEditarModalChange,
 }: CentroMarkersProps) {
   return (
     <>
@@ -214,6 +236,7 @@ function CentroMarkersInner({
           onReportar={onReportar}
           onReportarLugar={onReportarLugar}
           onVerLista={onVerLista}
+          onEditarModalChange={onEditarModalChange}
         />
       ))}
     </>

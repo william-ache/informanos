@@ -186,6 +186,7 @@ function MapView({
   const [reportarCentro, setReportarCentro] = useState<CentroAcopio | null>(
     null,
   );
+  const [editarLugarOpen, setEditarLugarOpen] = useState(false);
   const centroMapaRef = useRef({ lat: ARAGUA_CENTER[0], lng: ARAGUA_CENTER[1] });
 
   const onCentroMapaChange = useCallback((lat: number, lng: number) => {
@@ -196,7 +197,8 @@ function MapView({
     configureLeafletIcons();
   }, []);
 
-  const hayModalMapa = modalAbierto || menuAgregar || !!reportarCentro;
+  const hayModalMapa =
+    modalAbierto || menuAgregar || !!reportarCentro || editarLugarOpen;
 
   useEffect(() => {
     onUiModalChange?.(hayModalMapa);
@@ -367,6 +369,7 @@ function MapView({
           onReportar={onReportarCentro}
           onReportarLugar={setReportarCentro}
           onVerLista={onVerCentroLista}
+          onEditarModalChange={setEditarLugarOpen}
         />
 
         {coords && modalAbierto && (

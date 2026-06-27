@@ -91,7 +91,23 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ propuesta: mapPropuesta(propuesta) });
+    await resolverPropuestasExpiradas();
+
+    const [actualizadas] = await pool.query<PropuestaRow[]>(
+      `SELECT p.id, p.centro_id, p.tipo_propuesto, p.estado, p.expira_en, p.creado_en,
+              COALESCE(SUM(CASE WHEN v.voto = 'si' THEN v.peso ELSE 0 END), 0) AS votos_si,
+              COALESCE(SUM(CASE WHEN v.voto = 'no' THEN v.peso ELSE 0 END), 0) AS votos_no,
+              COUNT(DISTINCT v.ip_hash) AS votantes
+       FROM propuestas_tipo_lugar p
+       LEFT JOIN votos_propuesta_tipo v ON v.propuesta_id = p.id
+       WHERE p.id = ?
+       GROUP BY p.id, p.centro_id, p.tipo_propuesto, p.estado, p.expira_en, p.creado_en`,
+      [propuestaId],
+    );
+
+    const final = actualizadas[0] ?? propuesta;
+
+    return NextResponse.json({ propuesta: mapPropuesta(final) });
   } catch (error) {
     return handleDbError(error);
   }
